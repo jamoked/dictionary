@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lexicon — Vocabulary Cards</title>
+
+    <!-- Google Fonts: Inter (matches Obsidian's clean, modern feel) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tailwind Play CDN — no build step needed.
+       darkMode: 'class' means the 'dark' class on <html> controls dark mode.
+       We extend colors to add our violet accent consistently. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Inter', 'sans-serif'] }
+          }
+        }
+      };
+    </script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+
+  <body
+    class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans min-h-screen transition-colors duration-200"
+  >
+    <!-- ── HEADER ─────────────────────────────────────────────────────────── -->
+    <header
+      class="sticky top-0 z-10 bg-gray-50/90 dark:bg-gray-950/90 backdrop-blur border-b border-gray-200 dark:border-gray-800"
+    >
+      <div
+        class="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between gap-4"
+      >
+        <span class="text-lg font-semibold tracking-tight">Lexicon</span>
+
+        <nav class="flex items-center gap-1" role="tablist">
+          <button
+            id="tab-cards"
+            role="tab"
+            data-active="true"
+            class="px-4 py-1.5 text-sm font-medium border-b-2 transition-colors"
+            aria-controls="view-cards"
+          >
+            My Cards
+          </button>
+          <button
+            id="tab-study"
+            role="tab"
+            data-active="false"
+            class="px-4 py-1.5 text-sm font-medium border-b-2 transition-colors"
+            aria-controls="view-study"
+          >
+            Study
+          </button>
+        </nav>
+
+        <button
+          id="theme-toggle"
+          aria-label="Toggle light/dark mode"
+          class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+        ></button>
+      </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 py-10">
+      <!-- ── MY CARDS VIEW ─────────────────────────────────────────────────── -->
+      <section id="view-cards">
+        <!-- Search & filter -->
+        <div class="flex flex-col sm:flex-row gap-3 mb-4">
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Search 0 words…"
+            class="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
+          />
+          <select
+            id="filter-pos"
+            class="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
+          >
+            <option value="">Filter by…</option>
+            <option value="noun">noun</option>
+            <option value="verb">verb</option>
+            <option value="adjective">adjective</option>
+            <option value="adverb">adverb</option>
+            <option value="pronoun">pronoun</option>
+            <option value="preposition">preposition</option>
+            <option value="conjunction">conjunction</option>
+            <option value="interjection">interjection</option>
+          </select>
+        </div>
+
+        <!-- Collapsible form panel — expands below the search bar, above the card list.
+           Uses the CSS grid trick from styles.css to animate open/close smoothly. -->
+        <div id="form-wrapper" class="form-collapsible mb-0">
+          <div>
+            <div
+              class="border border-gray-200 dark:border-gray-700 rounded-xl p-6 bg-white dark:bg-gray-800 shadow-sm mb-4"
+            >
+              <h2 id="form-title" class="text-base font-semibold mb-5">
+                Add a card
+              </h2>
+              <form id="card-form" class="flex flex-col gap-4" novalidate>
+                <div class="flex flex-col gap-1">
+                  <label
+                    for="input-word"
+                    class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide"
+                    >Word</label
+                  >
+                  <input
+                    id="input-word"
+                    type="text"
+                    placeholder="e.g. ephemeral"
+                    required
+                    class="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
+                  />
+                </div>
+
+                <div class="flex flex-col gap-1">
+                  <label
+                    for="input-pos"
+                    class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide"
+                    >Part of speech</label
+                  >
+                  <select
+                    id="input-pos"
+                    required
+                    class="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
+                  >
+                    <option value="" disabled selected>Select…</option>
+                    <option value="noun">noun</option>
+                    <option value="verb">verb</option>
+                    <option value="adjective">adjective</option>
+                    <option value="adverb">adverb</option>
+                    <option value="pronoun">pronoun</option>
+                    <option value="preposition">preposition</option>
+                    <option value="conjunction">conjunction</option>
+                    <option value="interjection">interjection</option>
+                  </select>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                  <label
+                    for="input-definition"
+                    class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide"
+                    >Definition</label
+                  >
+                  <textarea
+                    id="input-definition"
+                    rows="2"
+                    placeholder="e.g. lasting for a very short time"
+                    required
+                    class="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition resize-none"
+                  ></textarea>
+                </div>
+
+                <div class="flex items-center gap-3">
+                  <button
+                    id="submit-btn"
+                    type="submit"
+                    class="bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
+                  >
+                    Add card
+                  </button>
+                  <button
+                    id="cancel-edit-btn"
+                    type="button"
+                    class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add a card trigger — styled to match the card list, sits at the top of the list -->
+        <button
+          id="add-card-trigger"
+          class="w-full flex items-center justify-center gap-2 text-sm font-medium text-violet-600 dark:text-violet-400 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-5 py-3 shadow-sm hover:border-violet-300 dark:hover:border-violet-700 hover:bg-violet-50 dark:hover:bg-violet-950 transition-colors mb-4"
+        >
+          <span class="text-base leading-none">+</span> Add a card
+        </button>
+
+        <!-- Empty state -->
+        <div
+          id="empty-state"
+          class="text-center py-16 text-gray-400 dark:text-gray-600"
+        >
+          <p class="text-lg">Add a card to get started.</p>
+        </div>
+
+        <!-- Card list (populated by app.js) -->
+        <div
+          id="card-list"
+          class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        ></div>
+      </section>
+
+      <!-- ── STUDY VIEW ─────────────────────────────────────────────────────── -->
+      <section id="view-study" class="hidden">
+        <!-- Include known toggle -->
+        <div class="flex justify-end mb-6">
+          <label
+            class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 cursor-pointer select-none"
+          >
+            <input
+              id="include-known"
+              type="checkbox"
+              class="accent-violet-600 w-4 h-4 cursor-pointer"
+            />
+            Include known cards
+          </label>
+        </div>
+
+        <!-- Empty state for study -->
+        <div
+          id="study-empty"
+          class="text-center py-16 text-gray-400 dark:text-gray-600 hidden"
+        >
+          <p class="text-4xl mb-3">✅</p>
+          <p class="text-sm">
+            All cards marked as known — toggle "Include known" to review
+            them,<br />or add more cards.
+          </p>
+        </div>
+
+        <!-- Flip card
+           The outer div sets the 3D perspective. The inner div is what actually rotates.
+           Front and back faces are stacked on top of each other; only the one facing
+           the user is visible (the other has backface-visibility: hidden in styles.css). -->
+        <div
+          id="study-card"
+          class="hidden cursor-pointer mb-6"
+          style="height: 260px"
+        >
+          <div id="study-card-inner" class="study-card-inner">
+            <!-- Front: word + part of speech -->
+            <div
+              id="study-front"
+              class="study-card-face study-card-front bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm"
+            >
+              <p
+                class="study-word text-3xl font-semibold text-gray-900 dark:text-gray-100 text-center mb-2"
+              ></p>
+              <p
+                class="study-pos text-sm text-gray-400 dark:text-gray-500 text-center"
+              ></p>
+              <p class="mt-6 text-xs text-gray-300 dark:text-gray-600">
+                click to flip
+              </p>
+            </div>
+            <!-- Back: definition -->
+            <div
+              id="study-back"
+              class="study-card-face study-card-back bg-violet-50 dark:bg-violet-950 border border-violet-200 dark:border-violet-800"
+            >
+              <p
+                class="study-definition text-base text-gray-700 dark:text-gray-300 text-center leading-relaxed"
+              ></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Counter -->
+        <p
+          id="study-counter"
+          class="text-center text-sm text-gray-400 dark:text-gray-500 mb-4"
+        ></p>
+
+        <!-- Status dots — shown between counter and nav controls -->
+        <div id="study-status-row" class="hidden justify-center gap-2.5 mb-5">
+          <button
+            id="btn-status-new"
+            class="w-4 h-4 rounded transition-colors"
+            aria-label="Mark as new"
+            title="New"
+          ></button>
+          <button
+            id="btn-status-semi"
+            class="w-4 h-4 rounded transition-colors"
+            aria-label="Mark as learning"
+            title="Learning"
+          ></button>
+          <button
+            id="btn-status-known"
+            class="w-4 h-4 rounded transition-colors"
+            aria-label="Mark as known"
+            title="Known"
+          ></button>
+        </div>
+
+        <!-- Nav controls -->
+        <div
+          id="study-controls"
+          class="hidden flex flex-wrap justify-center gap-3"
+        >
+          <button
+            id="btn-prev"
+            class="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            ← Prev
+          </button>
+          <button
+            id="btn-flip"
+            class="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            Flip
+          </button>
+          <button
+            id="btn-next"
+            class="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            Next →
+          </button>
+          <button
+            id="btn-shuffle"
+            class="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            Shuffle
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- ── DEV TOOLS PANEL ──────────────────────────────────────────────────── -->
+    <!-- This panel is for testing and learning. Safe to remove when shipping. -->
+    <footer class="mt-16 border-t border-gray-200 dark:border-gray-800">
+      <div class="max-w-5xl mx-auto px-6 py-4">
+        <button
+          id="dev-toggle"
+          class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors font-mono"
+        >
+          Dev tools ▸
+        </button>
+
+        <div
+          id="dev-panel"
+          class="hidden mt-4 p-4 rounded-lg bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
+        >
+          <p class="text-xs font-mono text-gray-500 dark:text-gray-400 mb-3">
+            Also available in the browser console as
+            <code class="bg-gray-200 dark:bg-gray-800 px-1 rounded"
+              >window.dev</code
+            >
+          </p>
+          <div class="flex flex-wrap gap-2 mb-3">
+            <button
+              id="dev-seed"
+              class="text-xs font-mono px-3 py-1.5 rounded bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
+            >
+              Add sample cards
+            </button>
+            <button
+              id="dev-clear"
+              class="text-xs font-mono px-3 py-1.5 rounded bg-gray-200 dark:bg-gray-800 hover:bg-red-100 dark:hover:bg-red-950 hover:text-red-600 transition-colors"
+            >
+              Clear all data
+            </button>
+            <button
+              id="dev-log"
+              class="text-xs font-mono px-3 py-1.5 rounded bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
+            >
+              Log to console
+            </button>
+          </div>
+          <p
+            id="dev-count"
+            class="text-xs font-mono text-gray-400 dark:text-gray-600"
+          ></p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scripts loaded in dependency order: storage → devtools → app -->
+    <script src="js/storage.js"></script>
+    <script src="js/devtools.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

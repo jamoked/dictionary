@@ -1,0 +1,112 @@
+// storage.js — DATA LAYER
+// This is the only file that reads from or writes to localStorage.
+// All other files call these functions instead of touching localStorage directly.
+// Later, if you add a real backend, you only need to change this one file.
+
+const STORAGE_KEY = "flashcards";
+
+// Valid status values for a card.
+const STATUSES = ["new", "semi", "known"];
+
+// --- Internal helpers ---
+
+function loadAll() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const cards = raw ? JSON.parse(raw) : [];
+    // Migrate older cards that used a boolean `known` field to the new `status` field.
+    return cards.map((card) => {
+      if (card.status === undefined) {
+        return { ...card, status: card.known ? "known" : "new" };
+      }
+      return card;
+    });
+  } catch {
+    // If the stored data is somehow corrupted, start fresh rather than crash.
+    return [];
+  }
+}
+
+function saveAll(cards) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+}
+
+// --- Public API ---
+
+function getCards() {
+  return loadAll();
+}
+
+function getCard(id) {
+  return loadAll().find((c) => c.id === id) ?? null;
+}
+
+// Returns the existing card if word + partOfSpeech already exist (case-insensitive).
+// Used to warn the user before adding a duplicate.
+function findDuplicate(word, partOfSpeech) {
+  const normalWord = word.trim().toLowerCase();
+  const normalPos = partOfSpeech.trim().toLowerCase();
+  return (
+    loadAll().find(
+      (c) =>
+        c.word.toLowerCase() === normalWord &&
+        c.partOfSpeech.toLowerCase() === normalPos
+    ) ?? null
+  );
+}
+
+function addCard({ word, partOfSpeech, definition }) {
+  const cards = loadAll();
+  const newCard = {
+    id: crypto.randomUUID(),
+    word: word.trim(),
+    partOfSpeech,
+    definition: definition.trim(),
+    status: "new",
+    createdAt: Date.now(),
+  };
+  cards.push(newCard);
+  saveAll(cards);
+  return newCard;
+}
+
+function updateCard(id, changes) {
+  const cards = loadAll();
+  const index = cards.findIndex((c) => c.id === id);
+  if (index === -1) return null;
+  cards[index] = { ...cards[index], ...changes };
+  saveAll(cards);
+  return cards[index];
+}
+
+function deleteCard(id) {
+  const cards = loadAll().filter((c) => c.id !== id);
+  saveAll(cards);
+}
+
+// Sets a card's review status to one of: "new", "semi", "known".
+function setStatus(id, status) {
+  if (!STATUSES.includes(status)) return;
+  const cards = loadAll();
+  const card = cards.find((c) => c.id === id);
+  if (card) {
+    card.status = status;
+    saveAll(cards);
+  }
+}
+
+function clearAll() {
+  saveAll([]);
+}
+
+// Expose everything under a single global so other files can call storage.getCards(), etc.
+const storage = {
+  getCards,
+  getCard,
+  findDuplicate,
+  addCard,
+  updateCard,
+  deleteCard,
+  setStatus,
+  clearAll,
+};

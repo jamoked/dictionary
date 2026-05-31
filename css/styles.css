@@ -1,0 +1,75 @@
+/* styles.css
+   Handles two things Tailwind utilities can't do easily:
+   1. The study card flip animation
+   2. CSS custom properties for accent color consistency
+   Everything else is Tailwind utility classes in index.html. */
+
+/* ── Study card flip ──────────────────────────────────────────────────────────
+   Simple opacity crossfade between front and back — more minimal than 3D rotation.
+   Both faces are stacked on top of each other; only the visible one has opacity: 1.
+   The transition is GPU-accelerated (opacity), so it stays smooth. */
+
+.study-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.study-card-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  border-radius: 1rem;
+  transition: opacity 0.18s ease;
+}
+
+.study-card-front { opacity: 1; }
+.study-card-back  { opacity: 0; }
+
+.study-card-inner.flipped .study-card-front { opacity: 0; }
+.study-card-inner.flipped .study-card-back  { opacity: 1; }
+
+/* ── Collapsible form panel ──────────────────────────────────────────────────
+   Layout change (height) is instant — no animation.
+   Only the content fades in/out so the appearance feels clean, not harsh. */
+
+.form-collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+}
+.form-collapsible.open {
+  grid-template-rows: 1fr;
+}
+.form-collapsible > div {
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.form-collapsible.open > div {
+  opacity: 1;
+}
+
+/* ── Accent color custom property ────────────────────────────────────────────
+   Violet-600 matches Tailwind's violet-600 (#7c3aed). */
+
+:root {
+  --accent: #7c3aed;
+}
+
+/* Smooth focus ring for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Scrollbar styling (Webkit) ──────────────────────────────────────────────
+   Keeps the scrollbar subtle to match the clean aesthetic. */
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+.dark ::-webkit-scrollbar-thumb { background: #4b5563; }
