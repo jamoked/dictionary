@@ -1,7 +1,8 @@
 /* styles.css
-   Handles two things Tailwind utilities can't do easily:
+   Handles things Tailwind utilities can't do easily:
    1. The study card flip animation
-   2. CSS custom properties for accent color consistency
+   2. Modal open/close animation
+   3. CSS custom properties for accent color consistency
    Everything else is Tailwind utility classes in index.html. */
 
 /* ── Study card flip ──────────────────────────────────────────────────────────
@@ -33,24 +34,39 @@
 .study-card-inner.flipped .study-card-front { opacity: 0; }
 .study-card-inner.flipped .study-card-back  { opacity: 1; }
 
-/* ── Collapsible form panel ──────────────────────────────────────────────────
-   Layout change (height) is instant — no animation.
-   Only the content fades in/out so the appearance feels clean, not harsh. */
+/* ── Modal ───────────────────────────────────────────────────────────────────
+   The overlay starts invisible (opacity 0, pointer-events none) so it's in the
+   DOM but unreachable. Adding .open fades in the backdrop and slides the dialog
+   down into place. Using opacity+pointer-events instead of display:none allows
+   the CSS transition to run. */
 
-.form-collapsible {
-  display: grid;
-  grid-template-rows: 0fr;
-}
-.form-collapsible.open {
-  grid-template-rows: 1fr;
-}
-.form-collapsible > div {
-  overflow: hidden;
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0);
   opacity: 0;
-  transition: opacity 0.15s ease;
+  pointer-events: none;
+  transition: opacity 0.15s ease, background 0.15s ease;
 }
-.form-collapsible.open > div {
+
+.modal-overlay.open {
   opacity: 1;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.modal-dialog {
+  transform: translateY(-8px) scale(0.98);
+  transition: transform 0.15s ease;
+}
+
+.modal-overlay.open .modal-dialog {
+  transform: translateY(0) scale(1);
 }
 
 /* ── Delete button hover ─────────────────────────────────────────────────────
@@ -59,6 +75,23 @@
 
 .btn-delete:hover { color: rgb(239 68 68); }           /* red-500 */
 .dark .btn-delete:hover { color: rgb(248 113 113); }   /* red-400, softer in dark mode */
+
+/* ── Definition line clamp ───────────────────────────────────────────────────
+   Truncates definition text to 2 lines with a trailing ellipsis. Applied via
+   a CSS class so it works reliably in JS-generated card innerHTML. */
+
+.definition-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Interactive element cursors ─────────────────────────────────────────────
+   Browsers default buttons to 'cursor: default', not pointer. Set pointer on
+   all clickable elements so the UI feels consistently interactive. */
+
+button, select { cursor: pointer; }
 
 /* ── Accent color custom property ────────────────────────────────────────────
    Violet-600 matches Tailwind's violet-600 (#7c3aed). */

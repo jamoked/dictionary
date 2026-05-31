@@ -14,15 +14,18 @@ const ICON_SUN = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" st
 
 // editingId tracks which card is being edited (null when adding a new card)
 let editingId = null;
+let viewCardId = null;
+let confirmCallback = null;
 
 // Study mode state
 let studyDeck = [];
 let studyIndex = 0;
 let studyFlipped = false;
 
-// Search/filter state
+// Search/filter/sort state
 let searchQuery = "";
 let filterPos = "";
+let groupByStatus = false;
 
 // ─── DOM REFERENCES ───────────────────────────────────────────────────────────
 
@@ -33,7 +36,9 @@ const viewCards = document.getElementById("view-cards");
 const viewStudy = document.getElementById("view-study");
 
 const addCardTrigger = document.getElementById("add-card-trigger");
-const formWrapper = document.getElementById("form-wrapper");
+const cardModal = document.getElementById("card-modal");
+const viewModal = document.getElementById("view-modal");
+const confirmModal = document.getElementById("confirm-modal");
 const cardForm = document.getElementById("card-form");
 const formTitle = document.getElementById("form-title");
 const wordInput = document.getElementById("input-word");
@@ -43,9 +48,11 @@ const submitBtn = document.getElementById("submit-btn");
 const cancelEditBtn = document.getElementById("cancel-edit-btn");
 
 const wordError = document.getElementById("word-error");
+const definitionError = document.getElementById("definition-error");
 
 const searchInput = document.getElementById("search-input");
 const filterSelect = document.getElementById("filter-pos");
+const sortGroupSelect = document.getElementById("sort-group");
 const cardList = document.getElementById("card-list");
 const emptyState = document.getElementById("empty-state");
 
@@ -127,14 +134,12 @@ tabStudy.addEventListener("click", () => showTab("study"));
 // ─── FORM (ADD / EDIT) ────────────────────────────────────────────────────────
 
 function openForm() {
-  formWrapper.classList.add("open");
-  addCardTrigger.classList.add("hidden");
+  cardModal.classList.add("open");
   wordInput.focus();
 }
 
 function closeForm() {
-  formWrapper.classList.remove("open");
-  addCardTrigger.classList.remove("hidden");
+  cardModal.classList.remove("open");
   resetForm();
 }
 
@@ -145,6 +150,8 @@ function resetForm() {
   submitBtn.textContent = "Add card";
   wordError.classList.add("hidden");
   wordInput.classList.remove("border-red-400", "focus:ring-red-400");
+  definitionError.classList.add("hidden");
+  definitionInput.classList.remove("border-red-400");
 }
 
 function startEdit(id) {
@@ -157,16 +164,22 @@ function startEdit(id) {
   formTitle.textContent = "Edit card";
   submitBtn.textContent = "Save changes";
   openForm();
-  // Scroll form into view on mobile
-  formWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 addCardTrigger.addEventListener("click", openForm);
 cancelEditBtn.addEventListener("click", closeForm);
+document.getElementById("modal-close").addEventListener("click", closeForm);
+// Close when clicking the backdrop (the overlay itself, not the dialog inside it)
+cardModal.addEventListener("click", (e) => { if (e.target === cardModal) closeForm(); });
 
 wordInput.addEventListener("input", () => {
   wordError.classList.add("hidden");
   wordInput.classList.remove("border-red-400", "focus:ring-red-400");
+});
+
+definitionInput.addEventListener("input", () => {
+  definitionError.classList.add("hidden");
+  definitionInput.classList.remove("border-red-400");
 });
 
 cardForm.addEventListener("submit", (e) => {
@@ -183,6 +196,14 @@ cardForm.addEventListener("submit", (e) => {
     wordError.classList.remove("hidden");
     wordInput.classList.add("border-red-400", "focus:ring-red-400");
     wordInput.focus();
+    return;
+  }
+
+  if (definition.length > 200) {
+    definitionError.textContent = "Definition must be 200 characters or fewer.";
+    definitionError.classList.remove("hidden");
+    definitionInput.classList.add("border-red-400");
+    definitionInput.focus();
     return;
   }
 
@@ -217,11 +238,33 @@ function getFilteredCards() {
   });
 }
 
+function createCardEl(card) {
+  const el = document.createElement("div");
+  el.className =
+    "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:-translate-y-px cursor-pointer transition-all";
+  el.dataset.cardId = card.id;
+  el.innerHTML = `
+    <div class="grid gap-x-3 gap-y-1 items-center" style="grid-template-columns: 1fr auto">
+      <span class="text-lg font-semibold text-gray-900 dark:text-gray-100 leading-tight">${escapeHtml(card.word)}</span>
+      <div class="flex gap-1.5 justify-end">${statusDots(card.id, card.status)}</div>
+      <span class="text-xs italic text-gray-400/70 dark:text-gray-500/70">${escapeHtml(card.partOfSpeech)}</span>
+      <div class="flex gap-2 justify-end">
+        <button data-action="edit" data-id="${card.id}" class="text-gray-300 dark:text-gray-600 hover:text-violet-500 dark:hover:text-violet-400 transition-colors" aria-label="Edit">${ICON_EDIT}</button>
+        <button data-action="delete" data-id="${card.id}" class="text-gray-300 dark:text-gray-600 btn-delete transition-colors" aria-label="Delete">${ICON_DELETE}</button>
+      </div>
+    </div>
+    <p class="definition-clamp text-gray-600 dark:text-gray-300 text-sm leading-relaxed">${escapeHtml(card.definition)}</p>
+  `;
+  return el;
+}
+
 function renderCardList() {
   const total = storage.getCards().length;
   searchInput.placeholder = `Search ${total} word${total === 1 ? "" : "s"}…`;
 
   const cards = getFilteredCards();
+  cards.sort((a, b) => a.word.localeCompare(b.word));
+
   cardList.innerHTML = "";
 
   if (cards.length === 0) {
@@ -230,46 +273,122 @@ function renderCardList() {
   }
   emptyState.classList.add("hidden");
 
-  cards.forEach((card) => {
-    const el = document.createElement("div");
-    el.className =
-      "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:-translate-y-px cursor-pointer transition-all";
+  if (groupByStatus) {
+    const groups = [
+      { status: "new",   label: "New",      dot: "bg-red-400" },
+      { status: "semi",  label: "Learning", dot: "bg-yellow-400" },
+      { status: "known", label: "Known",    dot: "bg-green-400" },
+    ];
+    groups.forEach(({ status, label, dot }) => {
+      const group = cards.filter((c) => c.status === status);
+      if (group.length === 0) return;
 
-    el.innerHTML = `
-      <div class="grid gap-x-3 gap-y-1 items-center" style="grid-template-columns: 1fr auto">
-        <span class="text-lg font-semibold text-gray-900 dark:text-gray-100 leading-tight">${escapeHtml(card.word)}</span>
-        <div class="flex gap-1.5 justify-end">${statusDots(card.id, card.status)}</div>
-        <span class="text-xs italic text-gray-400/70 dark:text-gray-500/70">${escapeHtml(card.partOfSpeech)}</span>
-        <div class="flex gap-2 justify-end">
-          <button data-action="edit" data-id="${card.id}" class="text-gray-300 dark:text-gray-600 hover:text-violet-500 dark:hover:text-violet-400 transition-colors" aria-label="Edit">${ICON_EDIT}</button>
-          <button data-action="delete" data-id="${card.id}" class="text-gray-300 dark:text-gray-600 btn-delete transition-colors" aria-label="Delete">${ICON_DELETE}</button>
-        </div>
-      </div>
-      <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">${escapeHtml(card.definition)}</p>
-    `;
-
-    cardList.appendChild(el);
-  });
+      const header = document.createElement("div");
+      header.className = "flex items-center gap-2 mt-1";
+      header.style.gridColumn = "1 / -1";
+      header.innerHTML = `
+        <span class="w-2 h-2 rounded-sm ${dot}"></span>
+        <span class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">${label}</span>
+        <div class="flex-1 h-px bg-gray-100 dark:bg-gray-800"></div>
+      `;
+      cardList.appendChild(header);
+      group.forEach((card) => cardList.appendChild(createCardEl(card)));
+    });
+  } else {
+    cards.forEach((card) => cardList.appendChild(createCardEl(card)));
+  }
 }
 
-// Handle edit/delete clicks via event delegation — one listener for all cards
+// Handle clicks via event delegation — action buttons take priority, then card body.
 cardList.addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-action]");
-  if (!btn) return;
-  const { action, id } = btn.dataset;
-
-  if (action === "edit") {
-    startEdit(id);
-  } else if (action === "delete") {
-    if (confirm("Delete this card? This cannot be undone.")) {
-      storage.deleteCard(id);
+  if (btn) {
+    const { action, id } = btn.dataset;
+    if (action === "edit") {
+      startEdit(id);
+    } else if (action === "delete") {
+      openConfirmModal(() => { storage.deleteCard(id); renderAll(); });
+    } else if (action === "set-status") {
+      storage.setStatus(id, btn.dataset.status);
       renderAll();
     }
-  } else if (action === "set-status") {
-    storage.setStatus(id, btn.dataset.status);
-    renderAll();
+    return;
+  }
+  // Card body click — open view modal to read full definition
+  const cardEl = e.target.closest("[data-card-id]");
+  if (cardEl) openViewModal(cardEl.dataset.cardId);
+});
+
+// ─── VIEW MODAL ───────────────────────────────────────────────────────────────
+
+function openViewModal(id) {
+  const card = storage.getCard(id);
+  if (!card) return;
+  viewCardId = id;
+  document.getElementById("view-word").textContent = card.word;
+  document.getElementById("view-pos").textContent = card.partOfSpeech;
+  document.getElementById("view-definition").textContent = card.definition;
+  document.getElementById("view-status-dots").innerHTML = statusDots(id, card.status);
+  viewModal.classList.add("open");
+}
+
+function closeViewModal() {
+  viewModal.classList.remove("open");
+  viewCardId = null;
+}
+
+function navigateViewModal(direction) {
+  const cards = getFilteredCards();
+  cards.sort((a, b) => a.word.localeCompare(b.word));
+  const idx = cards.findIndex((c) => c.id === viewCardId);
+  if (idx === -1) return;
+  const next = idx + direction;
+  if (next >= 0 && next < cards.length) openViewModal(cards[next].id);
+}
+
+// Backdrop click closes; status dot clicks update status in place
+viewModal.addEventListener("click", (e) => {
+  if (e.target === viewModal) { closeViewModal(); return; }
+  const statusBtn = e.target.closest("button[data-action='set-status']");
+  if (statusBtn) {
+    const { id, status } = statusBtn.dataset;
+    storage.setStatus(id, status);
+    document.getElementById("view-status-dots").innerHTML = statusDots(id, status);
+    renderCardList();
+    updateDevCount();
   }
 });
+
+document.getElementById("view-edit-btn").addEventListener("click", () => {
+  const id = viewCardId;
+  closeViewModal();
+  startEdit(id);
+});
+
+document.getElementById("view-delete-btn").addEventListener("click", () => {
+  const id = viewCardId;
+  closeViewModal();
+  openConfirmModal(() => { storage.deleteCard(id); renderAll(); });
+});
+
+// ─── CONFIRM MODAL ────────────────────────────────────────────────────────────
+
+function openConfirmModal(onConfirm) {
+  confirmCallback = onConfirm;
+  confirmModal.classList.add("open");
+}
+
+function closeConfirmModal() {
+  confirmModal.classList.remove("open");
+  confirmCallback = null;
+}
+
+document.getElementById("confirm-cancel").addEventListener("click", closeConfirmModal);
+document.getElementById("confirm-delete").addEventListener("click", () => {
+  if (confirmCallback) confirmCallback();
+  closeConfirmModal();
+});
+confirmModal.addEventListener("click", (e) => { if (e.target === confirmModal) closeConfirmModal(); });
 
 searchInput.addEventListener("input", (e) => {
   searchQuery = e.target.value;
@@ -278,6 +397,11 @@ searchInput.addEventListener("input", (e) => {
 
 filterSelect.addEventListener("change", (e) => {
   filterPos = e.target.value;
+  renderCardList();
+});
+
+sortGroupSelect.addEventListener("change", (e) => {
+  groupByStatus = e.target.value === "status";
   renderCardList();
 });
 
@@ -362,6 +486,16 @@ Object.entries(studyStatusBtns).forEach(([status, btn]) => {
 });
 
 document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (confirmModal.classList.contains("open")) { closeConfirmModal(); return; }
+    if (cardModal.classList.contains("open")) { closeForm(); return; }
+    if (viewModal.classList.contains("open")) { closeViewModal(); return; }
+  }
+  if (viewModal.classList.contains("open")) {
+    if (e.key === "ArrowLeft")  { e.preventDefault(); navigateViewModal(-1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); navigateViewModal(1); }
+    return;
+  }
   if (viewStudy.classList.contains("hidden")) return;
   if (document.activeElement.matches("input, textarea, select")) return;
   if (studyDeck.length === 0) return;
