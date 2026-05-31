@@ -19,7 +19,6 @@ let editingId = null;
 let studyDeck = [];
 let studyIndex = 0;
 let studyFlipped = false;
-let includeKnown = false;
 
 // Search/filter state
 let searchQuery = "";
@@ -43,6 +42,8 @@ const definitionInput = document.getElementById("input-definition");
 const submitBtn = document.getElementById("submit-btn");
 const cancelEditBtn = document.getElementById("cancel-edit-btn");
 
+const wordError = document.getElementById("word-error");
+
 const searchInput = document.getElementById("search-input");
 const filterSelect = document.getElementById("filter-pos");
 const cardList = document.getElementById("card-list");
@@ -57,7 +58,6 @@ const studyEmpty = document.getElementById("study-empty");
 const studyControls = document.getElementById("study-controls");
 const prevBtn = document.getElementById("btn-prev");
 const nextBtn = document.getElementById("btn-next");
-const flipBtn = document.getElementById("btn-flip");
 const shuffleBtn = document.getElementById("btn-shuffle");
 const studyStatusRow = document.getElementById("study-status-row");
 const studyStatusBtns = {
@@ -65,7 +65,6 @@ const studyStatusBtns = {
   semi:  document.getElementById("btn-status-semi"),
   known: document.getElementById("btn-status-known"),
 };
-const includeKnownToggle = document.getElementById("include-known");
 
 const devPanel = document.getElementById("dev-panel");
 const devToggleBtn = document.getElementById("dev-toggle");
@@ -144,6 +143,8 @@ function resetForm() {
   cardForm.reset();
   formTitle.textContent = "Add a card";
   submitBtn.textContent = "Add card";
+  wordError.classList.add("hidden");
+  wordInput.classList.remove("border-red-400", "focus:ring-red-400");
 }
 
 function startEdit(id) {
@@ -163,6 +164,11 @@ function startEdit(id) {
 addCardTrigger.addEventListener("click", openForm);
 cancelEditBtn.addEventListener("click", closeForm);
 
+wordInput.addEventListener("input", () => {
+  wordError.classList.add("hidden");
+  wordInput.classList.remove("border-red-400", "focus:ring-red-400");
+});
+
 cardForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const word = wordInput.value.trim();
@@ -170,6 +176,15 @@ cardForm.addEventListener("submit", (e) => {
   const definition = definitionInput.value.trim();
 
   if (!word || !partOfSpeech || !definition) return;
+
+  const wordValidationError = validateWord(word);
+  if (wordValidationError) {
+    wordError.textContent = wordValidationError;
+    wordError.classList.remove("hidden");
+    wordInput.classList.add("border-red-400", "focus:ring-red-400");
+    wordInput.focus();
+    return;
+  }
 
   if (editingId) {
     storage.updateCard(editingId, { word, partOfSpeech, definition });
@@ -218,7 +233,7 @@ function renderCardList() {
   cards.forEach((card) => {
     const el = document.createElement("div");
     el.className =
-      "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all";
+      "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:-translate-y-px cursor-pointer transition-all";
 
     el.innerHTML = `
       <div class="grid gap-x-3 gap-y-1 items-center" style="grid-template-columns: 1fr auto">
@@ -227,7 +242,7 @@ function renderCardList() {
         <span class="text-xs italic text-gray-400/70 dark:text-gray-500/70">${escapeHtml(card.partOfSpeech)}</span>
         <div class="flex gap-2 justify-end">
           <button data-action="edit" data-id="${card.id}" class="text-gray-300 dark:text-gray-600 hover:text-violet-500 dark:hover:text-violet-400 transition-colors" aria-label="Edit">${ICON_EDIT}</button>
-          <button data-action="delete" data-id="${card.id}" class="text-gray-300 dark:text-gray-600 hover:text-red-400 transition-colors" aria-label="Delete">${ICON_DELETE}</button>
+          <button data-action="delete" data-id="${card.id}" class="text-gray-300 dark:text-gray-600 btn-delete transition-colors" aria-label="Delete">${ICON_DELETE}</button>
         </div>
       </div>
       <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">${escapeHtml(card.definition)}</p>
@@ -269,8 +284,7 @@ filterSelect.addEventListener("change", (e) => {
 // ─── STUDY MODE ───────────────────────────────────────────────────────────────
 
 function buildDeck() {
-  const all = storage.getCards();
-  studyDeck = includeKnown ? all : all.filter((c) => c.status !== "known");
+  studyDeck = storage.getCards();
 }
 
 function renderStudy() {
@@ -319,11 +333,6 @@ studyCard.addEventListener("click", () => {
   studyCardInner.classList.toggle("flipped", studyFlipped);
 });
 
-flipBtn.addEventListener("click", () => {
-  studyFlipped = !studyFlipped;
-  studyCardInner.classList.toggle("flipped", studyFlipped);
-});
-
 prevBtn.addEventListener("click", () => {
   if (studyIndex > 0) {
     studyIndex--;
@@ -349,16 +358,31 @@ shuffleBtn.addEventListener("click", () => {
 });
 
 Object.entries(studyStatusBtns).forEach(([status, btn]) => {
-  btn.addEventListener("click", () => {
-    storage.setStatus(studyDeck[studyIndex].id, status);
-    updateStudyStatusDots(status);
-  });
+  btn.addEventListener("click", () => setCurrentCardStatus(status));
 });
 
-includeKnownToggle.addEventListener("change", () => {
-  includeKnown = includeKnownToggle.checked;
-  studyIndex = 0;
-  renderStudy();
+document.addEventListener("keydown", (e) => {
+  if (viewStudy.classList.contains("hidden")) return;
+  if (document.activeElement.matches("input, textarea, select")) return;
+  if (studyDeck.length === 0) return;
+
+  if (e.key === "ArrowLeft") {
+    e.preventDefault();
+    if (studyIndex > 0) { studyIndex--; showStudyCard(); }
+  } else if (e.key === "ArrowRight") {
+    e.preventDefault();
+    if (studyIndex < studyDeck.length - 1) { studyIndex++; showStudyCard(); }
+  } else if (e.key === " ") {
+    e.preventDefault();
+    studyFlipped = !studyFlipped;
+    studyCardInner.classList.toggle("flipped", studyFlipped);
+  } else if (e.key === "1") {
+    setCurrentCardStatus("new");
+  } else if (e.key === "2") {
+    setCurrentCardStatus("semi");
+  } else if (e.key === "3") {
+    setCurrentCardStatus("known");
+  }
 });
 
 // ─── DEV TOOLS PANEL ─────────────────────────────────────────────────────────
@@ -424,6 +448,15 @@ function statusDots(cardId, currentStatus) {
   ).join("");
 }
 
+// Sets status for the current study card and keeps both views in sync.
+function setCurrentCardStatus(status) {
+  storage.setStatus(studyDeck[studyIndex].id, status);
+  updateStudyStatusDots(status);
+  // Update the cards list in the background so changes are visible when switching tabs.
+  renderCardList();
+  updateDevCount();
+}
+
 // Highlights the active status dot in the study mode controls.
 function updateStudyStatusDots(currentStatus) {
   const base = "w-4 h-4 rounded cursor-pointer transition-colors";
@@ -435,6 +468,15 @@ function updateStudyStatusDots(currentStatus) {
   Object.entries(studyStatusBtns).forEach(([status, btn]) => {
     btn.className = currentStatus === status ? configs[status].active : configs[status].inactive;
   });
+}
+
+// Validates a word against dictionary-appropriate characters.
+// Allows letters (including accented), spaces (phrasal verbs), hyphens, apostrophes.
+// Returns an error string, or null if valid.
+function validateWord(word) {
+  if (/^\d/.test(word)) return "Words can't start with a number.";
+  if (!/^[a-zA-ZÀ-ÿ][a-zA-ZÀ-ÿ\s'\-]*$/.test(word)) return "Words can only contain letters, hyphens, and apostrophes.";
+  return null;
 }
 
 // Escape HTML to prevent XSS when inserting user text into innerHTML

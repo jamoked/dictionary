@@ -53,6 +53,13 @@
   opacity: 1;
 }
 
+/* ── Delete button hover ─────────────────────────────────────────────────────
+   Tailwind's Play CDN won't generate hover:text-red-* for classes that only
+   appear inside JS-generated innerHTML, so we define it directly here. */
+
+.btn-delete:hover { color: rgb(239 68 68); }           /* red-500 */
+.dark .btn-delete:hover { color: rgb(248 113 113); }   /* red-400, softer in dark mode */
+
 /* ── Accent color custom property ────────────────────────────────────────────
    Violet-600 matches Tailwind's violet-600 (#7c3aed). */
 

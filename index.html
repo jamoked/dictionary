@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lexicon — Vocabulary Cards</title>
+    <title>Dictionary</title>
 
     <!-- Google Fonts: Inter (matches Obsidian's clean, modern feel) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -41,7 +41,7 @@
       <div
         class="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between gap-4"
       >
-        <span class="text-lg font-semibold tracking-tight">Lexicon</span>
+        <span class="text-lg font-semibold tracking-tight">Dictionary</span>
 
         <nav class="flex items-center gap-1" role="tablist">
           <button
@@ -51,7 +51,7 @@
             class="px-4 py-1.5 text-sm font-medium border-b-2 transition-colors"
             aria-controls="view-cards"
           >
-            My Cards
+            Study
           </button>
           <button
             id="tab-study"
@@ -60,7 +60,7 @@
             class="px-4 py-1.5 text-sm font-medium border-b-2 transition-colors"
             aria-controls="view-study"
           >
-            Study
+            Review
           </button>
         </nav>
 
@@ -123,6 +123,10 @@
                     required
                     class="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
                   />
+                  <p
+                    id="word-error"
+                    class="hidden text-xs text-red-500 mt-0.5"
+                  ></p>
                 </div>
 
                 <div class="flex flex-col gap-1">
@@ -209,30 +213,12 @@
 
       <!-- ── STUDY VIEW ─────────────────────────────────────────────────────── -->
       <section id="view-study" class="hidden">
-        <!-- Include known toggle -->
-        <div class="flex justify-end mb-6">
-          <label
-            class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 cursor-pointer select-none"
-          >
-            <input
-              id="include-known"
-              type="checkbox"
-              class="accent-violet-600 w-4 h-4 cursor-pointer"
-            />
-            Include known cards
-          </label>
-        </div>
-
         <!-- Empty state for study -->
         <div
           id="study-empty"
           class="text-center py-16 text-gray-400 dark:text-gray-600 hidden"
         >
-          <p class="text-4xl mb-3">✅</p>
-          <p class="text-sm">
-            All cards marked as known — toggle "Include known" to review
-            them,<br />or add more cards.
-          </p>
+          <p class="text-sm">Add cards to your collection to review them.</p>
         </div>
 
         <!-- Flip card
@@ -256,9 +242,6 @@
               <p
                 class="study-pos text-sm text-gray-400 dark:text-gray-500 text-center"
               ></p>
-              <p class="mt-6 text-xs text-gray-300 dark:text-gray-600">
-                click to flip
-              </p>
             </div>
             <!-- Back: definition -->
             <div
@@ -312,22 +295,16 @@
             ← Prev
           </button>
           <button
-            id="btn-flip"
+            id="btn-shuffle"
             class="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            Flip
+            Shuffle
           </button>
           <button
             id="btn-next"
             class="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             Next →
-          </button>
-          <button
-            id="btn-shuffle"
-            class="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            Shuffle
           </button>
         </div>
       </section>
