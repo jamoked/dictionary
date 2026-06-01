@@ -23,6 +23,7 @@ let deletingCardOriginalHtml = null;
 let studyDeck = [];
 let studyIndex = 0;
 let studyFlipped = false;
+let reviewFilterStatuses = new Set(); // empty = show all; any entries = show only those statuses
 
 // Search/filter/sort state
 let searchQuery = "";
@@ -63,6 +64,12 @@ const filterStatusBtns = {
 const cardList = document.getElementById("card-list");
 const emptyState = document.getElementById("empty-state");
 
+const studyFilter = document.getElementById("study-filter");
+const reviewFilterBtns = {
+  new:   document.getElementById("review-filter-new"),
+  semi:  document.getElementById("review-filter-semi"),
+  known: document.getElementById("review-filter-known"),
+};
 const studyCard = document.getElementById("study-card");
 const studyCardInner = document.getElementById("study-card-inner");
 const studyFront = document.getElementById("study-front");
@@ -491,22 +498,40 @@ Object.entries(filterStatusBtns).forEach(([status, btn]) => {
   });
 });
 
+Object.entries(reviewFilterBtns).forEach(([status, btn]) => {
+  btn.addEventListener("click", () => {
+    if (reviewFilterStatuses.has(status)) {
+      reviewFilterStatuses.delete(status);
+    } else {
+      reviewFilterStatuses.add(status);
+    }
+    updateReviewFilterDots();
+    studyIndex = 0;
+    renderStudy();
+  });
+});
+
 // ─── STUDY MODE ───────────────────────────────────────────────────────────────
 
 function buildDeck() {
-  studyDeck = storage.getCards();
+  const all = storage.getCards();
+  studyDeck = reviewFilterStatuses.size === 0
+    ? all
+    : all.filter(c => reviewFilterStatuses.has(c.status));
 }
 
 function renderStudy() {
   buildDeck();
   studyFlipped = false;
 
+  // Top row (filter + shuffle) visible whenever cards exist in storage
+  const hasAnyCards = storage.getCards().length > 0;
+  studyFilter.classList.toggle("hidden", !hasAnyCards);
+
   if (studyDeck.length === 0) {
     studyCard.classList.add("hidden");
     studyStatusRow.classList.add("hidden");
-    studyStatusRow.classList.remove("flex");
     studyControls.classList.add("hidden");
-    studyCounter.textContent = "";
     studyEmpty.classList.remove("hidden");
     return;
   }
@@ -514,7 +539,6 @@ function renderStudy() {
   studyEmpty.classList.add("hidden");
   studyCard.classList.remove("hidden");
   studyStatusRow.classList.remove("hidden");
-  studyStatusRow.classList.add("flex");
   studyControls.classList.remove("hidden");
 
   // Clamp index in case deck shrank (e.g. after marking last card as known)
@@ -650,15 +674,21 @@ function renderAll() {
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
-// Updates the toolbar status filter dots to reflect which statuses are active.
+const STATUS_DOT_CONFIGS = {
+  new:   { active: "w-3 h-3 rounded bg-red-400 transition-colors",    inactive: "w-3 h-3 rounded border border-red-400 transition-colors" },
+  semi:  { active: "w-3 h-3 rounded bg-yellow-400 transition-colors", inactive: "w-3 h-3 rounded border border-yellow-400 transition-colors" },
+  known: { active: "w-3 h-3 rounded bg-green-400 transition-colors",  inactive: "w-3 h-3 rounded border border-green-400 transition-colors" },
+};
+
 function updateStatusFilterDots() {
-  const configs = {
-    new:   { active: "w-3 h-3 rounded bg-red-400 transition-colors",    inactive: "w-3 h-3 rounded border border-red-400 transition-colors" },
-    semi:  { active: "w-3 h-3 rounded bg-yellow-400 transition-colors", inactive: "w-3 h-3 rounded border border-yellow-400 transition-colors" },
-    known: { active: "w-3 h-3 rounded bg-green-400 transition-colors",  inactive: "w-3 h-3 rounded border border-green-400 transition-colors" },
-  };
   Object.entries(filterStatusBtns).forEach(([status, btn]) => {
-    btn.className = filterStatuses.has(status) ? configs[status].active : configs[status].inactive;
+    btn.className = filterStatuses.has(status) ? STATUS_DOT_CONFIGS[status].active : STATUS_DOT_CONFIGS[status].inactive;
+  });
+}
+
+function updateReviewFilterDots() {
+  Object.entries(reviewFilterBtns).forEach(([status, btn]) => {
+    btn.className = reviewFilterStatuses.has(status) ? STATUS_DOT_CONFIGS[status].active : STATUS_DOT_CONFIGS[status].inactive;
   });
 }
 
@@ -692,16 +722,16 @@ function setCurrentCardStatus(status) {
   updateDevCount();
 }
 
-// Highlights the active status dot in the study mode controls.
+// Highlights the active dot in the status row — targets the inner span, not the button.
 function updateStudyStatusDots(currentStatus) {
-  const base = "w-4 h-4 rounded cursor-pointer transition-colors";
+  const base = "w-5 h-5 rounded transition-colors";
   const configs = {
     new:   { active: `${base} bg-red-400`,    inactive: `${base} border border-red-400` },
     semi:  { active: `${base} bg-yellow-400`, inactive: `${base} border border-yellow-400` },
     known: { active: `${base} bg-green-400`,  inactive: `${base} border border-green-400` },
   };
   Object.entries(studyStatusBtns).forEach(([status, btn]) => {
-    btn.className = currentStatus === status ? configs[status].active : configs[status].inactive;
+    btn.querySelector("span").className = currentStatus === status ? configs[status].active : configs[status].inactive;
   });
 }
 
