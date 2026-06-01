@@ -65,29 +65,39 @@ Clicking the card body (anywhere except the action buttons) opens the **view mod
 Three small rounded-square buttons (`w-3 h-3 rounded`) per card:
 - **Active**: solid fill (`bg-red-400` / `bg-yellow-400` / `bg-green-400`)
 - **Inactive**: outline only (`border border-red-400` etc.) — same color as fill for consistency
-- Clicking sets status via `storage.setStatus()` and re-renders (stays on current card in study mode)
-- Study mode has larger dots (`w-4 h-4`) in their own row between the counter and nav controls
+- Clicking sets status via `storage.setStatus()` and re-renders
+
+In study mode the dots are larger (`w-5 h-5`) inside `w-12 h-12` square buttons so the tap target is the full square, not just the dot.
 
 ### Icons (app.js — ICON_EDIT, ICON_DELETE, ICON_MOON, ICON_SUN)
 Inline SVG constants at the top of app.js. Feather-style line icons, 13–15px. Theme toggle uses `innerHTML` (not `textContent`) to set SVG icons. Edit/delete buttons are near-invisible (`text-gray-300 dark:text-gray-600`) until hovered.
 
 ### Modal system (styles.css + app.js)
-Three modals share the same CSS pattern — `.modal-overlay` + `.modal-dialog`. The overlay starts at `opacity: 0; pointer-events: none` so it's in the DOM but unreachable; adding `.open` fades in the backdrop and slides the dialog into place. `display: none` is avoided so CSS transitions can run.
+Two modals share the same CSS pattern — `.modal-overlay` + `.modal-dialog`. The overlay starts at `opacity: 0; pointer-events: none` so it's in the DOM but unreachable; adding `.open` fades in the backdrop and slides the dialog into place. `display: none` is avoided so CSS transitions can run.
 
 | Modal | ID | Purpose |
 |---|---|---|
 | Add / Edit | `#card-modal` | Replaces the old inline collapsible form |
 | View card | `#view-modal` | Shows a card full-size; supports ←→ arrow key navigation |
-| Delete confirmation | `#confirm-modal` | Replaced the browser's native `confirm()` dialog |
 
-All three modals close on backdrop click or **Escape**. Escape priority order: confirm → add/edit → view.
+Both modals close on backdrop click or **Escape**. Escape priority order: inline-delete → add/edit → view.
+
+### Inline delete confirmation
+There is no separate confirm modal. Instead, clicking delete replaces the card's content in place with a minimal "Delete `<word>`? / Cancel / Delete" UI, keeping the user's mouse right where it already is.
+
+- **Card list**: `showInlineDeleteConfirm(id)` saves the card element's `innerHTML`, replaces it with the confirmation, and restores on Cancel. Only one card can be in confirm state at a time — triggering a second cancel cancels the first automatically. Escape also cancels.
+- **View modal**: `showViewModalDeleteConfirm()` does the same thing to the `.modal-dialog` innerHTML. The modal stays open. `closeViewModal()` always restores the dialog's original HTML before closing so the static elements (`#view-word` etc.) are available for the next `openViewModal()` call.
+- Both use event delegation so replacing innerHTML doesn't break any listeners.
 
 ### Toolbar (Learn tab)
-Three controls in a row: search input, part-of-speech filter, sort/group dropdown.
+Four controls in a row: search input, status filter pill, part-of-speech filter, sort/group dropdown.
 
 - Search placeholder shows live count: `Search N words…`
-- Filter: `Filter by…` (value `""` = show all)
+- **Status filter pill** (`#filter-status-new/semi/known`): three `w-3 h-3` dot toggle buttons inside a bordered container. Multi-select — any combination of statuses can be active simultaneously. Empty set = show all. Managed by `filterStatuses` (a `Set`) and `updateStatusFilterDots()`.
+- POS filter: `Filter by…` (value `""` = show all)
 - Sort/group: **Group by name** (alphabetical, default) | **Group by status** — groups cards under New / Learning / Known headers with a colored dot
+
+`getFilteredCards()` applies search, POS filter, and status filter together (AND logic).
 
 When grouped by status, `renderCardList` renders section headers (dot + label + divider line) before each group's cards. Only non-empty groups appear.
 
@@ -103,16 +113,29 @@ Validation on submit:
 `.btn-delete:hover` is defined in `styles.css` (not a Tailwind class) because Tailwind's Play CDN only scans static HTML — it won't generate `hover:text-red-*` for classes that only appear inside JS-generated `innerHTML`.
 
 ### Study mode (Review tab)
-- Deck includes all non-known cards; no "Include known" toggle
-- Card flip: simple opacity crossfade (`0.18s ease`) between front and back faces — no 3D transform
-- Status dots between counter and nav controls — clicking updates status in place, no auto-advance
-- Nav controls: Prev | Shuffle | Next
+The review section is constrained to `max-w-sm mx-auto` to keep the card flashcard-sized on large displays, consistent with the grid card scale on the Learn tab.
+
+Layout top to bottom:
+1. **Filter row** (top-right, `#study-filter`) — `filter` label + three `w-3 h-3` dot toggles. Visible whenever storage has cards. Managed by `reviewFilterStatuses` (a `Set`) independent of the Learn tab filter.
+2. **Flip card** (`#study-card`) — opacity crossfade (`0.18s ease`) between front (word + POS) and back (definition). Click to flip.
+3. **Nav row** (`#study-controls`) — counter (`2 / 8`) above, then `← Prev  Shuffle  Next →` below.
+4. **Status row** (`#study-status-row`) — three `w-12 h-12` square buttons with `w-5 h-5` dot inside. Clicking marks the current card's status in place; no auto-advance.
+
+`buildDeck()` reads from `storage.getCards()` filtered by `reviewFilterStatuses`. When the filter yields an empty deck, the card/nav/status elements hide but the filter row stays visible so the user can adjust it.
+
+Keyboard shortcuts (active when Review tab is visible and no input is focused):
+- `←` / `→` — navigate cards
+- `Space` — flip card
+- `1` / `2` / `3` — set status (new / semi / known)
 
 ### Responsive grid
 Cards use `grid gap-4 sm:grid-cols-2 lg:grid-cols-3`. Container is `max-w-5xl`.
 
 ### Theme
 Tailwind `class` dark-mode. `applyTheme(isDark)` sets `innerHTML` on the toggle button. Persisted in localStorage; defaults to `prefers-color-scheme` on first visit.
+
+### Shared dot config
+`STATUS_DOT_CONFIGS` in app.js holds the active/inactive Tailwind class strings for all `w-3 h-3` dot buttons. Used by both `updateStatusFilterDots()` (Learn tab) and `updateReviewFilterDots()` (Review tab). Study mode status dots use a separate inline config with `w-5 h-5`.
 
 ## Inline SVG icons (app.js)
 
