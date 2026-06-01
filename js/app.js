@@ -15,7 +15,9 @@ const ICON_SUN = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" st
 // editingId tracks which card is being edited (null when adding a new card)
 let editingId = null;
 let viewCardId = null;
-let confirmCallback = null;
+let viewModalDialogHtml = null; // saved html while view modal is showing inline delete confirm
+let deletingCardId = null;
+let deletingCardOriginalHtml = null;
 
 // Study mode state
 let studyDeck = [];
@@ -25,6 +27,7 @@ let studyFlipped = false;
 // Search/filter/sort state
 let searchQuery = "";
 let filterPos = "";
+let filterStatuses = new Set(); // empty = show all; any entries = show only those statuses
 let groupByStatus = false;
 
 // ─── DOM REFERENCES ───────────────────────────────────────────────────────────
@@ -38,7 +41,6 @@ const viewStudy = document.getElementById("view-study");
 const addCardTrigger = document.getElementById("add-card-trigger");
 const cardModal = document.getElementById("card-modal");
 const viewModal = document.getElementById("view-modal");
-const confirmModal = document.getElementById("confirm-modal");
 const cardForm = document.getElementById("card-form");
 const formTitle = document.getElementById("form-title");
 const wordInput = document.getElementById("input-word");
@@ -53,6 +55,11 @@ const definitionError = document.getElementById("definition-error");
 const searchInput = document.getElementById("search-input");
 const filterSelect = document.getElementById("filter-pos");
 const sortGroupSelect = document.getElementById("sort-group");
+const filterStatusBtns = {
+  new:   document.getElementById("filter-status-new"),
+  semi:  document.getElementById("filter-status-semi"),
+  known: document.getElementById("filter-status-known"),
+};
 const cardList = document.getElementById("card-list");
 const emptyState = document.getElementById("empty-state");
 
@@ -234,7 +241,8 @@ function getFilteredCards() {
   return storage.getCards().filter((card) => {
     const matchesSearch = card.word.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesPos = !filterPos || card.partOfSpeech === filterPos;
-    return matchesSearch && matchesPos;
+    const matchesStatus = filterStatuses.size === 0 || filterStatuses.has(card.status);
+    return matchesSearch && matchesPos && matchesStatus;
   });
 }
 
@@ -307,7 +315,14 @@ cardList.addEventListener("click", (e) => {
     if (action === "edit") {
       startEdit(id);
     } else if (action === "delete") {
-      openConfirmModal(() => { storage.deleteCard(id); renderAll(); });
+      showInlineDeleteConfirm(id);
+    } else if (action === "confirm-delete") {
+      deletingCardId = null;
+      deletingCardOriginalHtml = null;
+      storage.deleteCard(id);
+      renderAll();
+    } else if (action === "cancel-delete") {
+      cancelInlineDelete();
     } else if (action === "set-status") {
       storage.setStatus(id, btn.dataset.status);
       renderAll();
@@ -316,7 +331,8 @@ cardList.addEventListener("click", (e) => {
   }
   // Card body click — open view modal to read full definition
   const cardEl = e.target.closest("[data-card-id]");
-  if (cardEl) openViewModal(cardEl.dataset.cardId);
+  // Don't open view modal on a card that's showing the inline delete confirmation
+  if (cardEl && cardEl.dataset.cardId !== deletingCardId) openViewModal(cardEl.dataset.cardId);
 });
 
 // ─── VIEW MODAL ───────────────────────────────────────────────────────────────
@@ -333,8 +349,14 @@ function openViewModal(id) {
 }
 
 function closeViewModal() {
+  // Restore dialog HTML if we replaced it with the inline confirm UI —
+  // the static elements (#view-word etc.) must exist for the next openViewModal() call.
+  if (viewModalDialogHtml) {
+    viewModal.querySelector(".modal-dialog").innerHTML = viewModalDialogHtml;
+  }
   viewModal.classList.remove("open");
   viewCardId = null;
+  viewModalDialogHtml = null;
 }
 
 function navigateViewModal(direction) {
@@ -346,49 +368,101 @@ function navigateViewModal(direction) {
   if (next >= 0 && next < cards.length) openViewModal(cards[next].id);
 }
 
-// Backdrop click closes; status dot clicks update status in place
 viewModal.addEventListener("click", (e) => {
-  if (e.target === viewModal) { closeViewModal(); return; }
-  const statusBtn = e.target.closest("button[data-action='set-status']");
-  if (statusBtn) {
-    const { id, status } = statusBtn.dataset;
+  // Backdrop click
+  if (e.target === viewModal) {
+    if (viewModalDialogHtml) { cancelViewModalDelete(); return; }
+    closeViewModal();
+    return;
+  }
+
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+  const { action } = btn.dataset;
+
+  if (action === "set-status") {
+    const { id, status } = btn.dataset;
     storage.setStatus(id, status);
     document.getElementById("view-status-dots").innerHTML = statusDots(id, status);
     renderCardList();
     updateDevCount();
+  } else if (action === "view-edit") {
+    const id = viewCardId;
+    closeViewModal();
+    startEdit(id);
+  } else if (action === "view-delete") {
+    showViewModalDeleteConfirm();
+  } else if (action === "view-confirm-delete") {
+    const id = viewCardId;
+    closeViewModal();
+    storage.deleteCard(id);
+    renderAll();
+  } else if (action === "view-cancel-delete") {
+    cancelViewModalDelete();
   }
 });
 
-document.getElementById("view-edit-btn").addEventListener("click", () => {
-  const id = viewCardId;
-  closeViewModal();
-  startEdit(id);
-});
+// ─── INLINE DELETE CONFIRMATION ───────────────────────────────────────────────
 
-document.getElementById("view-delete-btn").addEventListener("click", () => {
-  const id = viewCardId;
-  closeViewModal();
-  openConfirmModal(() => { storage.deleteCard(id); renderAll(); });
-});
+function showInlineDeleteConfirm(id) {
+  cancelInlineDelete(); // restore any card already in confirm state
 
-// ─── CONFIRM MODAL ────────────────────────────────────────────────────────────
+  const card = storage.getCard(id);
+  if (!card) return;
 
-function openConfirmModal(onConfirm) {
-  confirmCallback = onConfirm;
-  confirmModal.classList.add("open");
+  const cardEl = cardList.querySelector(`[data-card-id="${id}"]`);
+  if (!cardEl) return;
+
+  deletingCardId = id;
+  deletingCardOriginalHtml = cardEl.innerHTML;
+
+  cardEl.innerHTML = `
+    <div class="flex flex-col items-center justify-center gap-2 py-2">
+      <p class="text-sm font-semibold text-gray-900 dark:text-gray-100 text-center">Delete "${escapeHtml(card.word)}"?</p>
+      <p class="text-xs text-gray-400 dark:text-gray-500 text-center">This cannot be undone.</p>
+      <div class="flex gap-3 items-center mt-2">
+        <button data-action="confirm-delete" data-id="${id}" class="bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-4 py-1.5 rounded-lg transition-colors">Delete</button>
+        <button data-action="cancel-delete" data-id="${id}" class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Cancel</button>
+      </div>
+    </div>
+  `;
 }
 
-function closeConfirmModal() {
-  confirmModal.classList.remove("open");
-  confirmCallback = null;
+function cancelInlineDelete() {
+  if (!deletingCardId) return;
+  const cardEl = cardList.querySelector(`[data-card-id="${deletingCardId}"]`);
+  if (cardEl && deletingCardOriginalHtml !== null) {
+    cardEl.innerHTML = deletingCardOriginalHtml;
+  }
+  deletingCardId = null;
+  deletingCardOriginalHtml = null;
 }
 
-document.getElementById("confirm-cancel").addEventListener("click", closeConfirmModal);
-document.getElementById("confirm-delete").addEventListener("click", () => {
-  if (confirmCallback) confirmCallback();
-  closeConfirmModal();
-});
-confirmModal.addEventListener("click", (e) => { if (e.target === confirmModal) closeConfirmModal(); });
+function showViewModalDeleteConfirm() {
+  const card = storage.getCard(viewCardId);
+  if (!card) return;
+
+  const dialog = viewModal.querySelector(".modal-dialog");
+  viewModalDialogHtml = dialog.innerHTML;
+
+  dialog.innerHTML = `
+    <div class="flex flex-col items-center justify-center gap-2">
+      <p class="text-sm font-semibold text-gray-900 dark:text-gray-100 text-center">Delete "${escapeHtml(card.word)}"?</p>
+      <p class="text-xs text-gray-400 dark:text-gray-500 text-center">This cannot be undone.</p>
+      <div class="flex gap-3 items-center mt-2">
+        <button data-action="view-confirm-delete" class="bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-4 py-1.5 rounded-lg transition-colors">Delete</button>
+        <button data-action="view-cancel-delete" class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+
+function cancelViewModalDelete() {
+  if (!viewModalDialogHtml) return;
+  const dialog = viewModal.querySelector(".modal-dialog");
+  dialog.innerHTML = viewModalDialogHtml;
+  viewModalDialogHtml = null;
+}
 
 searchInput.addEventListener("input", (e) => {
   searchQuery = e.target.value;
@@ -403,6 +477,18 @@ filterSelect.addEventListener("change", (e) => {
 sortGroupSelect.addEventListener("change", (e) => {
   groupByStatus = e.target.value === "status";
   renderCardList();
+});
+
+Object.entries(filterStatusBtns).forEach(([status, btn]) => {
+  btn.addEventListener("click", () => {
+    if (filterStatuses.has(status)) {
+      filterStatuses.delete(status);
+    } else {
+      filterStatuses.add(status);
+    }
+    updateStatusFilterDots();
+    renderCardList();
+  });
 });
 
 // ─── STUDY MODE ───────────────────────────────────────────────────────────────
@@ -487,9 +573,12 @@ Object.entries(studyStatusBtns).forEach(([status, btn]) => {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    if (confirmModal.classList.contains("open")) { closeConfirmModal(); return; }
+    if (deletingCardId) { cancelInlineDelete(); return; }
     if (cardModal.classList.contains("open")) { closeForm(); return; }
-    if (viewModal.classList.contains("open")) { closeViewModal(); return; }
+    if (viewModal.classList.contains("open")) {
+      if (viewModalDialogHtml) { cancelViewModalDelete(); return; }
+      closeViewModal(); return;
+    }
   }
   if (viewModal.classList.contains("open")) {
     if (e.key === "ArrowLeft")  { e.preventDefault(); navigateViewModal(-1); }
@@ -560,6 +649,18 @@ function renderAll() {
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+// Updates the toolbar status filter dots to reflect which statuses are active.
+function updateStatusFilterDots() {
+  const configs = {
+    new:   { active: "w-3 h-3 rounded bg-red-400 transition-colors",    inactive: "w-3 h-3 rounded border border-red-400 transition-colors" },
+    semi:  { active: "w-3 h-3 rounded bg-yellow-400 transition-colors", inactive: "w-3 h-3 rounded border border-yellow-400 transition-colors" },
+    known: { active: "w-3 h-3 rounded bg-green-400 transition-colors",  inactive: "w-3 h-3 rounded border border-green-400 transition-colors" },
+  };
+  Object.entries(filterStatusBtns).forEach(([status, btn]) => {
+    btn.className = filterStatuses.has(status) ? configs[status].active : configs[status].inactive;
+  });
+}
 
 // Generates the three traffic-light dot buttons for a card in the list.
 // Active: solid fill. Inactive: transparent with a thin colored outline.
