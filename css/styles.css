@@ -173,11 +173,6 @@ html.dark[data-theme="obsidian"] #study-controls button:hover { background-color
 #btn-status-semi  { border-color: rgb(250 204 21);  color: rgb(180 130 0); }
 #btn-status-known { border-color: rgb(74 222 128);  color: rgb(22 163 74); }
 
-/* Inactive hover: subtle tinted background */
-#btn-status-new:not(.status-active):hover   { background-color: rgb(254 226 226); }
-#btn-status-semi:not(.status-active):hover  { background-color: rgb(254 249 195); }
-#btn-status-known:not(.status-active):hover { background-color: rgb(220 252 231); }
-
 /* Active: filled background, same dark text as nav buttons, bold */
 #btn-status-new.status-active   { background-color: rgb(248 113 113); border-color: rgb(248 113 113); color: rgb(17 24 39); font-weight: 600; }
 #btn-status-semi.status-active  { background-color: rgb(250 204 21);  border-color: rgb(250 204 21);  color: rgb(17 24 39); font-weight: 600; }
@@ -188,8 +183,16 @@ html.dark[data-theme="obsidian"] #study-controls button:hover { background-color
 .dark #btn-status-semi:not(.status-active)  { color: rgb(253 224 71);  }
 .dark #btn-status-known:not(.status-active) { color: rgb(134 239 172); }
 
-/* Dark mode inactive hover */
-.dark #btn-status-new:not(.status-active):hover   { background-color: rgba(248, 113, 113, 0.12); }
-.dark #btn-status-semi:not(.status-active):hover  { background-color: rgba(250, 204, 21, 0.12);  }
-.dark #btn-status-known:not(.status-active):hover { background-color: rgba(74, 222, 128, 0.12);  }
+/* Hover effects — wrapped in (hover: hover) so they never fire on touchscreens.
+   On mobile, tapped elements retain :hover until the next tap, which would make
+   the previously-active button look selected even after switching status. */
+@media (hover: hover) {
+  #btn-status-new:not(.status-active):hover   { background-color: rgb(254 226 226); }
+  #btn-status-semi:not(.status-active):hover  { background-color: rgb(254 249 195); }
+  #btn-status-known:not(.status-active):hover { background-color: rgb(220 252 231); }
+
+  .dark #btn-status-new:not(.status-active):hover   { background-color: rgba(248, 113, 113, 0.12); }
+  .dark #btn-status-semi:not(.status-active):hover  { background-color: rgba(250, 204, 21, 0.12);  }
+  .dark #btn-status-known:not(.status-active):hover { background-color: rgba(74, 222, 128, 0.12);  }
+}
 
