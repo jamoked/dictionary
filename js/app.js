@@ -28,7 +28,7 @@ let reviewFilterStatuses = new Set(['new', 'semi', 'known']); // all on by defau
 // Search/filter/sort state
 let searchQuery = '';
 let filterPos = '';
-let filterStatuses = new Set(); // empty = show all; any entries = show only those statuses
+let filterStatuses = new Set(['new', 'semi', 'known']); // all on by default, mirrors review tab
 let groupByStatus = false;
 
 // ─── DOM REFERENCES ───────────────────────────────────────────────────────────
@@ -607,14 +607,6 @@ function renderStudy() {
     studyCard.classList.add('hidden');
     studyStatusRow.classList.add('hidden');
     studyControls.classList.add('hidden');
-    const labels = { new: 'New', semi: 'Learning', known: 'Known' };
-    const active = [...reviewFilterStatuses].map((s) => labels[s]);
-    const filterPhrase =
-      active.length === 1
-        ? active[0]
-        : active.slice(0, -1).join(', ') + ' or ' + active[active.length - 1];
-    studyEmpty.querySelector('p').textContent =
-      `No ${filterPhrase} words to review.`;
     studyEmpty.classList.remove('hidden');
     return;
   }
@@ -784,6 +776,7 @@ devLogBtn.addEventListener('click', () => {
 // Call this after any data change to keep the screen in sync with storage.
 function renderAll() {
   renderCardList();
+  updateStatusFilterDots();
   updateDevCount();
   // Re-render study if it's the active tab
   if (viewStudy && !viewStudy.classList.contains('hidden')) {
