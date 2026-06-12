@@ -196,6 +196,37 @@ html.dark[data-theme="obsidian"] #btn-shuffle              { border-color: #2d2b
 .dark #btn-status-semi:not(.status-active)  { color: rgb(253 224 71);  }
 .dark #btn-status-known:not(.status-active) { color: rgb(134 239 172); }
 
+/* ── Prevent horizontal scroll ───────────────────────────────────────────── */
+html, body { overflow-x: hidden; max-width: 100%; }
+
+/* ── Mobile scaling ──────────────────────────────────────────────────────────
+   Bumps the root font size so all rem-based sizing scales up ~12.5% on mobile.
+   Expands tap targets for small dot buttons to 44×44px via a centered ::before
+   pseudo-element — visuals stay the same, hit area gets much larger. */
+
+@media (max-width: 767px) {
+  html { font-size: 18px; }
+
+  /* Scale back the review card word — text-3xl at 18px base is too large */
+  .study-word { font-size: 1.5rem; }
+
+  [data-action="set-status"],
+  #filter-status-new, #filter-status-semi, #filter-status-known,
+  #review-filter-new, #review-filter-semi, #review-filter-known { position: relative; }
+
+  [data-action="set-status"]::before,
+  #filter-status-new::before, #filter-status-semi::before, #filter-status-known::before,
+  #review-filter-new::before, #review-filter-semi::before, #review-filter-known::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
 /* Hover effects — wrapped in (hover: hover) so they never fire on touchscreens.
    On mobile, tapped elements retain :hover until the next tap, which would make
    the previously-active button look selected even after switching status. */
