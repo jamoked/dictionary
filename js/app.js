@@ -23,7 +23,7 @@ let deletingCardOriginalHtml = null;
 let studyDeck = [];
 let studyIndex = 0;
 let studyFlipped = false;
-let reviewFilterStatuses = new Set(); // empty = show all; any entries = show only those statuses
+let reviewFilterStatuses = new Set(["new", "semi", "known"]); // all on by default
 
 // Search/filter/sort state
 let searchQuery = "";
@@ -33,7 +33,11 @@ let groupByStatus = false;
 
 // ─── DOM REFERENCES ───────────────────────────────────────────────────────────
 
-const themeToggleBtn = document.getElementById("theme-toggle");
+const settingsTriggerBtn  = document.getElementById("settings-trigger");
+const settingsModal       = document.getElementById("settings-modal");
+const settingsCloseBtn    = document.getElementById("settings-close");
+const settingsDarkToggle  = document.getElementById("settings-dark-toggle");
+const settingsThemeSelect = document.getElementById("settings-theme-select");
 const tabCards = document.getElementById("tab-cards");
 const tabStudy = document.getElementById("tab-study");
 const viewCards = document.getElementById("view-cards");
@@ -51,6 +55,7 @@ const submitBtn = document.getElementById("submit-btn");
 const cancelEditBtn = document.getElementById("cancel-edit-btn");
 
 const wordError = document.getElementById("word-error");
+const posError = document.getElementById("pos-error");
 const definitionError = document.getElementById("definition-error");
 
 const searchInput = document.getElementById("search-input");
@@ -98,23 +103,42 @@ const devCount = document.getElementById("dev-count");
 
 function applyTheme(isDark) {
   document.documentElement.classList.toggle("dark", isDark);
-  themeToggleBtn.innerHTML = isDark ? ICON_SUN : ICON_MOON;
+  settingsDarkToggle.setAttribute("aria-checked", isDark ? "true" : "false");
+}
+
+function applyColorTheme(name) {
+  document.documentElement.setAttribute("data-theme", name);
+  settingsThemeSelect.value = name;
+  localStorage.setItem("color-theme", name);
 }
 
 function initTheme() {
-  const saved = localStorage.getItem("theme");
-  if (saved) {
-    applyTheme(saved === "dark");
+  const savedDark = localStorage.getItem("theme");
+  if (savedDark) {
+    applyTheme(savedDark === "dark");
   } else {
-    // Default to the user's OS preference on first visit
     applyTheme(window.matchMedia("(prefers-color-scheme: dark)").matches);
   }
+  const savedColor = localStorage.getItem("color-theme");
+  // migrate anyone who had "default" saved before it was renamed to "slate"
+  applyColorTheme(savedColor === "default" ? "slate" : (savedColor || "obsidian"));
 }
 
-themeToggleBtn.addEventListener("click", () => {
+function openSettingsModal() { settingsModal.classList.add("open"); }
+function closeSettingsModal() { settingsModal.classList.remove("open"); }
+
+settingsTriggerBtn.addEventListener("click", openSettingsModal);
+settingsCloseBtn.addEventListener("click", closeSettingsModal);
+settingsModal.addEventListener("click", (e) => { if (e.target === settingsModal) closeSettingsModal(); });
+
+settingsDarkToggle.addEventListener("click", () => {
   const isDark = document.documentElement.classList.toggle("dark");
   localStorage.setItem("theme", isDark ? "dark" : "light");
-  themeToggleBtn.innerHTML = isDark ? ICON_SUN : ICON_MOON;
+  settingsDarkToggle.setAttribute("aria-checked", isDark ? "true" : "false");
+});
+
+settingsThemeSelect.addEventListener("change", () => {
+  applyColorTheme(settingsThemeSelect.value);
 });
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
@@ -164,6 +188,8 @@ function resetForm() {
   submitBtn.textContent = "Add card";
   wordError.classList.add("hidden");
   wordInput.classList.remove("border-red-400", "focus:ring-red-400");
+  posError.classList.add("hidden");
+  posSelect.classList.remove("border-red-400", "focus:ring-red-400");
   definitionError.classList.add("hidden");
   definitionInput.classList.remove("border-red-400");
 }
@@ -191,6 +217,11 @@ wordInput.addEventListener("input", () => {
   wordInput.classList.remove("border-red-400", "focus:ring-red-400");
 });
 
+posSelect.addEventListener("change", () => {
+  posError.classList.add("hidden");
+  posSelect.classList.remove("border-red-400", "focus:ring-red-400");
+});
+
 definitionInput.addEventListener("input", () => {
   definitionError.classList.add("hidden");
   definitionInput.classList.remove("border-red-400");
@@ -202,7 +233,15 @@ cardForm.addEventListener("submit", (e) => {
   const partOfSpeech = posSelect.value;
   const definition = definitionInput.value.trim();
 
-  if (!word || !partOfSpeech || !definition) return;
+  if (!word || !definition) return;
+
+  if (!partOfSpeech) {
+    posError.textContent = "Please select a part of speech.";
+    posError.classList.remove("hidden");
+    posSelect.classList.add("border-red-400", "focus:ring-red-400");
+    posSelect.focus();
+    return;
+  }
 
   const wordValidationError = validateWord(word);
   if (wordValidationError) {
@@ -274,8 +313,10 @@ function createCardEl(card) {
 }
 
 function renderCardList() {
-  const total = storage.getCards().length;
+  const allCards = storage.getCards();
+  const total = allCards.length;
   searchInput.placeholder = `Search ${total} word${total === 1 ? "" : "s"}…`;
+
 
   const cards = getFilteredCards();
   cards.sort((a, b) => a.word.localeCompare(b.word));
@@ -303,8 +344,11 @@ function renderCardList() {
       header.style.gridColumn = "1 / -1";
       header.innerHTML = `
         <span class="w-2 h-2 rounded-sm ${dot}"></span>
-        <span class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">${label}</span>
-        <div class="flex-1 h-px bg-gray-100 dark:bg-gray-800"></div>
+        <span class="flex items-baseline gap-1">
+          <span class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">${label}</span>
+          <span class="text-[10px] text-gray-300 dark:text-gray-600 tabular-nums">(${group.length})</span>
+        </span>
+        <div class="status-rule flex-1 h-px bg-gray-100 dark:bg-gray-800"></div>
       `;
       cardList.appendChild(header);
       group.forEach((card) => cardList.appendChild(createCardEl(card)));
@@ -501,6 +545,7 @@ Object.entries(filterStatusBtns).forEach(([status, btn]) => {
 Object.entries(reviewFilterBtns).forEach(([status, btn]) => {
   btn.addEventListener("click", () => {
     if (reviewFilterStatuses.has(status)) {
+      if (reviewFilterStatuses.size === 1) return; // always keep at least one active
       reviewFilterStatuses.delete(status);
     } else {
       reviewFilterStatuses.add(status);
@@ -523,20 +568,30 @@ function buildDeck() {
 function renderStudy() {
   buildDeck();
   studyFlipped = false;
+  updateReviewFilterDots();
 
   // Top row (filter + shuffle) visible whenever cards exist in storage
   const hasAnyCards = storage.getCards().length > 0;
   studyFilter.classList.toggle("hidden", !hasAnyCards);
 
   if (studyDeck.length === 0) {
+    studyCounter.classList.add("hidden");
     studyCard.classList.add("hidden");
     studyStatusRow.classList.add("hidden");
     studyControls.classList.add("hidden");
+    const labels = { new: "New", semi: "Learning", known: "Known" };
+    const active = [...reviewFilterStatuses].map(s => labels[s]);
+    const filterPhrase = active.length === 1
+      ? active[0]
+      : active.slice(0, -1).join(", ") + " or " + active[active.length - 1];
+    studyEmpty.querySelector("p").textContent =
+      `No ${filterPhrase} words to review.`;
     studyEmpty.classList.remove("hidden");
     return;
   }
 
   studyEmpty.classList.add("hidden");
+  studyCounter.classList.remove("hidden");
   studyCard.classList.remove("hidden");
   studyStatusRow.classList.remove("hidden");
   studyControls.classList.remove("hidden");
@@ -597,6 +652,7 @@ Object.entries(studyStatusBtns).forEach(([status, btn]) => {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
+    if (settingsModal.classList.contains("open")) { closeSettingsModal(); return; }
     if (deletingCardId) { cancelInlineDelete(); return; }
     if (cardModal.classList.contains("open")) { closeForm(); return; }
     if (viewModal.classList.contains("open")) {
@@ -714,24 +770,24 @@ function statusDots(cardId, currentStatus) {
 }
 
 // Sets status for the current study card and keeps both views in sync.
+// If the new status is filtered out, auto-advances to the next card in the deck.
 function setCurrentCardStatus(status) {
   storage.setStatus(studyDeck[studyIndex].id, status);
-  updateStudyStatusDots(status);
-  // Update the cards list in the background so changes are visible when switching tabs.
   renderCardList();
   updateDevCount();
+
+  const filteredOut = reviewFilterStatuses.size > 0 && !reviewFilterStatuses.has(status);
+  if (filteredOut) {
+    renderStudy(); // rebuilds deck without this card, clamps index
+  } else {
+    updateStudyStatusDots(status);
+  }
 }
 
 // Highlights the active dot in the status row — targets the inner span, not the button.
 function updateStudyStatusDots(currentStatus) {
-  const base = "w-6 h-6 rounded transition-colors";
-  const configs = {
-    new:   { active: `${base} bg-red-400`,    inactive: `${base} border border-red-400` },
-    semi:  { active: `${base} bg-yellow-400`, inactive: `${base} border border-yellow-400` },
-    known: { active: `${base} bg-green-400`,  inactive: `${base} border border-green-400` },
-  };
   Object.entries(studyStatusBtns).forEach(([status, btn]) => {
-    btn.querySelector("span").className = currentStatus === status ? configs[status].active : configs[status].inactive;
+    btn.classList.toggle("status-active", status === currentStatus);
   });
 }
 

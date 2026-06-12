@@ -65,10 +65,26 @@
         </nav>
 
         <button
-          id="theme-toggle"
-          aria-label="Toggle light/dark mode"
+          id="settings-trigger"
+          aria-label="Settings"
           class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
-        ></button>
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+            />
+          </svg>
+        </button>
       </div>
     </header>
 
@@ -86,6 +102,7 @@
           <!-- On mobile: dots + both dropdowns share one row; on sm+: all inline with search -->
           <div class="flex items-center gap-2">
             <div
+              id="filter-status-pill"
               class="flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 h-10 flex-none"
             >
               <button
@@ -158,18 +175,10 @@
 
       <!-- ── STUDY VIEW ─────────────────────────────────────────────────────── -->
       <section id="view-study" class="hidden max-w-sm mx-auto">
-        <!-- Empty state for study -->
-        <div
-          id="study-empty"
-          class="text-center py-16 text-gray-400 dark:text-gray-600 hidden"
-        >
-          <p class="text-lg">Add cards to your collection to review them.</p>
-        </div>
-
-        <!-- Filter — top right, visible whenever cards exist in storage -->
+        <!-- Filter — top right, always first so it stays above everything -->
         <div id="study-filter" class="hidden flex justify-end mb-4">
           <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-400 dark:text-gray-500">filter</span>
+            <span class="text-xs text-gray-400 dark:text-gray-500">Status</span>
             <button
               id="review-filter-new"
               title="New"
@@ -188,6 +197,19 @@
               aria-label="Filter: Known"
               class="w-4 h-4 rounded border border-green-400 transition-colors"
             ></button>
+          </div>
+        </div>
+
+        <!-- Empty state — ghost card, same size as flip card -->
+        <div
+          id="study-empty"
+          class="hidden mb-6"
+          style="height: 260px"
+        >
+          <div class="w-full h-full flex items-center justify-center rounded-2xl border border-gray-200 dark:border-gray-700">
+            <p class="text-sm text-gray-400 dark:text-gray-600 text-center px-8 leading-relaxed">
+              Add a card to your current status filter.
+            </p>
           </div>
         </div>
 
@@ -222,69 +244,135 @@
           </div>
         </div>
 
-        <!-- Nav: counter above, Prev / Shuffle / Next below -->
-        <div
-          id="study-controls"
-          class="hidden flex flex-col items-center gap-3 mt-4 mb-2"
-        >
-          <p
-            id="study-counter"
-            class="text-sm text-gray-400 dark:text-gray-500"
-          ></p>
-          <div class="flex gap-3">
-            <button
-              id="btn-prev"
-              class="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              ← Prev
-            </button>
-            <button
-              id="btn-shuffle"
-              class="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              Shuffle
-            </button>
-            <button
-              id="btn-next"
-              class="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              Next →
-            </button>
-          </div>
-        </div>
+        <!-- Counter row -->
+        <p
+          id="study-counter"
+          class="hidden text-sm text-center text-gray-400 dark:text-gray-500 mt-4"
+        ></p>
 
-        <!-- Status row: wide square buttons so the whole area is easily tappable -->
+        <!-- Status row: color-filled when active, outlined when inactive -->
         <div
           id="study-status-row"
-          class="hidden flex justify-center gap-3 py-4"
+          class="hidden flex justify-center gap-3 mt-3"
         >
           <button
             id="btn-status-new"
             aria-label="Mark as new"
             title="New"
-            class="w-12 h-12 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            <span class="w-6 h-6 rounded transition-colors"></span>
-          </button>
+            class="w-24 py-2 text-sm rounded-lg border transition-colors"
+          >New</button>
           <button
             id="btn-status-semi"
             aria-label="Mark as learning"
             title="Learning"
-            class="w-12 h-12 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            <span class="w-6 h-6 rounded transition-colors"></span>
-          </button>
+            class="w-24 py-2 text-sm rounded-lg border transition-colors"
+          >Learning</button>
           <button
             id="btn-status-known"
             aria-label="Mark as known"
             title="Known"
-            class="w-12 h-12 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            class="w-24 py-2 text-sm rounded-lg border transition-colors"
+          >Known</button>
+        </div>
+
+        <!-- Nav row -->
+        <div
+          id="study-controls"
+          class="hidden flex justify-center gap-3 mt-3 mb-2"
+        >
+          <button
+            id="btn-prev"
+            class="w-24 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            <span class="w-6 h-6 rounded transition-colors"></span>
+            ← Prev
+          </button>
+          <button
+            id="btn-shuffle"
+            class="w-24 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            Shuffle
+          </button>
+          <button
+            id="btn-next"
+            class="w-24 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            Next →
           </button>
         </div>
       </section>
     </main>
+
+    <!-- ── SETTINGS MODAL ───────────────────────────────────────────────────── -->
+    <div id="settings-modal" class="modal-overlay">
+      <div
+        class="modal-dialog bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 w-full max-w-sm shadow-xl"
+      >
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">
+            Settings
+          </h2>
+          <button
+            id="settings-close"
+            aria-label="Close settings"
+            class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Section label -->
+        <p
+          class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1"
+        >
+          Appearance
+        </p>
+
+        <!-- Dark mode row -->
+        <div
+          class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700"
+        >
+          <span class="text-sm text-gray-700 dark:text-gray-300"
+            >Dark mode</span
+          >
+          <button
+            id="settings-dark-toggle"
+            role="switch"
+            aria-checked="false"
+            aria-label="Toggle dark mode"
+            class="relative w-10 h-6 rounded-full bg-gray-200 dark:bg-gray-600 transition-colors flex-none"
+          >
+            <span
+              class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-150"
+            ></span>
+          </button>
+        </div>
+
+        <!-- Theme row -->
+        <div class="flex items-center justify-between py-3">
+          <span class="text-sm text-gray-700 dark:text-gray-300">Theme</span>
+          <select
+            id="settings-theme-select"
+            class="cursor-pointer rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
+          >
+            <option value="obsidian">Obsidian</option>
+            <option value="slate">Slate</option>
+          </select>
+        </div>
+      </div>
+    </div>
 
     <!-- ── ADD / EDIT CARD MODAL ────────────────────────────────────────────── -->
     <div id="card-modal" class="modal-overlay">
@@ -296,7 +384,7 @@
           <button
             id="modal-close"
             aria-label="Close"
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            class="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
           >
             <svg
               width="16"
@@ -352,6 +440,7 @@
               <option value="conjunction">conjunction</option>
               <option value="interjection">interjection</option> -->
             </select>
+            <p id="pos-error" class="hidden text-xs text-red-500 mt-0.5"></p>
           </div>
 
           <div class="flex flex-col gap-1">
@@ -384,7 +473,7 @@
             <button
               id="cancel-edit-btn"
               type="button"
-              class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              class="text-sm text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
             >
               Cancel
             </button>

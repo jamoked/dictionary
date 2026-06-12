@@ -113,3 +113,83 @@ button, select { cursor: pointer; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
 .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
+
+/* ── Settings dark-mode toggle switch ───────────────────────────────────────
+   Styled via aria-checked so no extra JS class wrangling is needed. */
+
+#settings-dark-toggle[aria-checked="true"] { background-color: #7c3aed; }
+#settings-dark-toggle[aria-checked="true"] span { transform: translateX(1rem); }
+
+/* ── OBSIDIAN THEME ──────────────────────────────────────────────────────────
+   Overrides the default gray Tailwind palette with a purple-tinted palette
+   inspired by the Obsidian app aesthetic.
+   Selectors use attribute + element/class specificity to beat Tailwind classes
+   without needing !important. */
+
+/* — Light — */
+html[data-theme="obsidian"] body                           { background-color: #f5f0ff; }
+html[data-theme="obsidian"] header                         { background-color: rgba(245,240,255,.9); border-color: #ddd6fe; }
+html[data-theme="obsidian"] .status-rule                   { background-color: #ddd6fe; }
+html[data-theme="obsidian"] #card-list > div[data-card-id] { background-color: #ffffff; border-color: #ddd6fe; }
+html[data-theme="obsidian"] #card-list > div[data-card-id]:hover { border-color: #c4b5fd; }
+html[data-theme="obsidian"] .modal-dialog                  { background-color: #ffffff; border-color: #ddd6fe; }
+html[data-theme="obsidian"] #search-input,
+html[data-theme="obsidian"] #filter-status-pill,
+html[data-theme="obsidian"] #filter-pos,
+html[data-theme="obsidian"] #sort-group                    { background-color: #ffffff; border-color: #ddd6fe; }
+html[data-theme="obsidian"] #add-card-trigger              { background-color: #ffffff; border-color: #ede9fe; }
+html[data-theme="obsidian"] #study-front                   { background-color: #ffffff; border-color: #ddd6fe; }
+html[data-theme="obsidian"] #btn-prev,
+html[data-theme="obsidian"] #btn-next,
+html[data-theme="obsidian"] #btn-shuffle                   { border-color: #ddd6fe; }
+
+/* — Dark — */
+html.dark[data-theme="obsidian"] body                      { background-color: #0f0e17; }
+html.dark[data-theme="obsidian"] header                    { background-color: rgba(15,14,23,.9); border-color: #2d2b3e; }
+html.dark[data-theme="obsidian"] .status-rule              { background-color: #2d2b3e; }
+html.dark[data-theme="obsidian"] #card-list > div[data-card-id] { background-color: #1c1b2e; border-color: #2d2b3e; }
+html.dark[data-theme="obsidian"] #card-list > div[data-card-id]:hover { border-color: #4c4a70; }
+html.dark[data-theme="obsidian"] .modal-dialog             { background-color: #1c1b2e; border-color: #2d2b3e; }
+html.dark[data-theme="obsidian"] #search-input,
+html.dark[data-theme="obsidian"] #filter-status-pill,
+html.dark[data-theme="obsidian"] #filter-pos,
+html.dark[data-theme="obsidian"] #sort-group               { background-color: #1c1b2e; border-color: #2d2b3e; }
+html.dark[data-theme="obsidian"] #add-card-trigger         { background-color: #1c1b2e; border-color: #2d2b3e; }
+html.dark[data-theme="obsidian"] #study-front              { background-color: #1c1b2e; border-color: #2d2b3e; }
+html.dark[data-theme="obsidian"] #btn-prev,
+html.dark[data-theme="obsidian"] #btn-next,
+html.dark[data-theme="obsidian"] #btn-shuffle              { border-color: #2d2b3e; }
+
+/* Override the default gray hover on study nav buttons so they match the page bg */
+html[data-theme="obsidian"] #study-controls button:hover   { background-color: #ede9fe; }
+html.dark[data-theme="obsidian"] #study-controls button:hover { background-color: #2d2b3e; }
+
+/* ── Study status buttons ────────────────────────────────────────────────────
+   Colors are set here rather than via Tailwind because Tailwind Play CDN only
+   scans HTML — class names built in JS strings aren't guaranteed to be generated. */
+
+/* Inactive: colored border + text, no fill */
+#btn-status-new   { border-color: rgb(248 113 113); color: rgb(239 68 68); }
+#btn-status-semi  { border-color: rgb(250 204 21);  color: rgb(180 130 0); }
+#btn-status-known { border-color: rgb(74 222 128);  color: rgb(22 163 74); }
+
+/* Inactive hover: subtle tinted background */
+#btn-status-new:not(.status-active):hover   { background-color: rgb(254 226 226); }
+#btn-status-semi:not(.status-active):hover  { background-color: rgb(254 249 195); }
+#btn-status-known:not(.status-active):hover { background-color: rgb(220 252 231); }
+
+/* Active: filled background, same dark text as nav buttons, bold */
+#btn-status-new.status-active   { background-color: rgb(248 113 113); border-color: rgb(248 113 113); color: rgb(17 24 39); font-weight: 600; }
+#btn-status-semi.status-active  { background-color: rgb(250 204 21);  border-color: rgb(250 204 21);  color: rgb(17 24 39); font-weight: 600; }
+#btn-status-known.status-active { background-color: rgb(74 222 128);  border-color: rgb(74 222 128);  color: rgb(17 24 39); font-weight: 600; }
+
+/* Dark mode inactive: lighter tones for contrast on dark bg */
+.dark #btn-status-new:not(.status-active)   { color: rgb(252 165 165); }
+.dark #btn-status-semi:not(.status-active)  { color: rgb(253 224 71);  }
+.dark #btn-status-known:not(.status-active) { color: rgb(134 239 172); }
+
+/* Dark mode inactive hover */
+.dark #btn-status-new:not(.status-active):hover   { background-color: rgba(248, 113, 113, 0.12); }
+.dark #btn-status-semi:not(.status-active):hover  { background-color: rgba(250, 204, 21, 0.12);  }
+.dark #btn-status-known:not(.status-active):hover { background-color: rgba(74, 222, 128, 0.12);  }
+
