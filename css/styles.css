@@ -117,11 +117,19 @@ button, select { cursor: pointer; }
 ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
 .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
 
-/* ── Settings dark-mode toggle switch ───────────────────────────────────────
-   Styled via aria-checked so no extra JS class wrangling is needed. */
+/* Import result details pane — narrower, blends into the container background */
+#import-result-list { scrollbar-width: thin; scrollbar-color: #e5e7eb transparent; }
+.dark #import-result-list { scrollbar-color: #374151 transparent; }
+#import-result-list::-webkit-scrollbar { width: 3px; }
+#import-result-list::-webkit-scrollbar-track { background: transparent; }
+#import-result-list::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
+.dark #import-result-list::-webkit-scrollbar-thumb { background: #374151; }
 
-#settings-dark-toggle[aria-checked="true"] { background-color: #7c3aed; }
-#settings-dark-toggle[aria-checked="true"] span { transform: translateX(1rem); }
+/* ── Settings appearance toggle (sun / moon pill) ────────────────────────── */
+
+.toggle-btn           { color: #9ca3af; }                                    /* gray-400 inactive */
+.toggle-btn.active    { background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.1); color: #374151; }  /* light-mode active */
+.dark .toggle-btn.active { background: #4b5563; color: #f3f4f6; }           /* dark-mode active */
 
 /* ── OBSIDIAN THEME ──────────────────────────────────────────────────────────
    Overrides the default gray Tailwind palette with a purple-tinted palette

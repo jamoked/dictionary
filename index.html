@@ -340,32 +340,33 @@
         <p
           class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1"
         >
-          Appearance
+          Style
         </p>
 
-        <!-- Dark mode row -->
+        <!-- Appearance (dark/light mode) row -->
         <div
           class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700"
         >
-          <span class="text-sm text-gray-700 dark:text-gray-300"
-            >Dark mode</span
-          >
-          <button
-            id="settings-dark-toggle"
-            role="switch"
-            aria-checked="false"
-            aria-label="Toggle dark mode"
-            class="relative w-10 h-6 rounded-full bg-gray-200 dark:bg-gray-600 transition-colors flex-none"
-          >
-            <span
-              class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-150"
-            ></span>
-          </button>
+          <span class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Display
+          </span>
+          <div class="flex rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 p-0.5 gap-0.5">
+            <button id="settings-light-btn" aria-label="Light mode" class="toggle-btn w-8 h-7 flex items-center justify-center rounded-full transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </button>
+            <button id="settings-dark-btn" aria-label="Dark mode" class="toggle-btn w-8 h-7 flex items-center justify-center rounded-full transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+          </div>
         </div>
 
         <!-- Theme row -->
-        <div class="flex items-center justify-between py-3">
-          <span class="text-sm text-gray-700 dark:text-gray-300">Theme</span>
+        <div class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
+          <span class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/><circle cx="8.5" cy="9.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="12.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="16.5" cy="9.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="7.5" cy="13.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+            Theme
+          </span>
           <select
             id="settings-theme-select"
             class="cursor-pointer rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
@@ -373,6 +374,44 @@
             <option value="obsidian">Obsidian</option>
             <option value="slate">Slate</option>
           </select>
+        </div>
+
+        <!-- Data section label -->
+        <p
+          class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mt-4 mb-1"
+        >
+          Data
+        </p>
+
+        <!-- Import row -->
+        <div
+          class="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700"
+        >
+          <span class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Import
+          </span>
+          <button
+            id="import-btn"
+            class="w-36 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg px-3 py-1.5 hover:border-violet-400 dark:hover:border-violet-600 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950 transition-colors"
+          >
+            Import .md file(s)
+          </button>
+          <input id="import-input" type="file" multiple accept=".md" class="hidden" />
+        </div>
+
+        <!-- Export row -->
+        <div class="flex items-center justify-between py-3">
+          <span class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Export
+          </span>
+          <button
+            id="export-btn"
+            class="w-36 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg px-3 py-1.5 hover:border-violet-400 dark:hover:border-violet-600 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950 transition-colors"
+          >
+            Export to .zip
+          </button>
         </div>
       </div>
     </div>
@@ -557,6 +596,103 @@
       </div>
     </div>
 
+    <!-- ── DUPLICATE REVIEW MODAL ────────────────────────────────────────────── -->
+    <!-- Shown during import when one or more files match existing cards. -->
+    <div id="duplicate-modal" class="modal-overlay">
+      <div
+        class="modal-dialog bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 w-full max-w-md shadow-xl"
+      >
+        <div class="mb-4">
+          <h2
+            id="dup-modal-title"
+            class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1"
+          >
+            Duplicate words found
+          </h2>
+          <p class="text-xs text-gray-400 dark:text-gray-500">
+            These words already exist. Check the ones you want to overwrite.
+          </p>
+        </div>
+
+        <!-- Scrollable list of duplicates — populated by JS -->
+        <div
+          id="dup-list"
+          class="flex flex-col gap-2 max-h-64 overflow-y-auto mb-5 pr-0.5"
+        ></div>
+
+        <div class="flex items-center justify-end gap-3">
+          <button
+            id="dup-skip-all"
+            class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          >
+            Skip all
+          </button>
+          <button
+            id="dup-confirm"
+            class="bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── IMPORT RESULT MODAL ─────────────────────────────────────────────────── -->
+    <!-- Shown after import completes — summary of added/updated/skipped/failed. -->
+    <div id="import-result-modal" class="modal-overlay">
+      <div
+        class="modal-dialog bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 w-full max-w-md shadow-xl"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">
+            Import Summary
+          </h2>
+          <button
+            id="import-result-close"
+            aria-label="Close"
+            class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <p
+          id="import-result-summary"
+          class="text-sm text-gray-700 dark:text-gray-300 mb-5"
+        ></p>
+
+        <!-- Per-file result list -->
+        <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">Details</p>
+        <div
+          id="import-result-errors"
+          class="hidden border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/40 overflow-hidden mb-4"
+        >
+          <div id="import-result-list" class="flex flex-col max-h-52 overflow-y-auto p-3"></div>
+        </div>
+
+        <div class="flex justify-end">
+          <button
+            id="import-result-done"
+            class="bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- ── DEV TOOLS PANEL ──────────────────────────────────────────────────── -->
     <!-- This panel is for testing and learning. Safe to remove when shipping. -->
     <footer class="mt-16 border-t border-gray-200 dark:border-gray-800">
@@ -606,9 +742,10 @@
       </div>
     </footer>
 
-    <!-- Scripts loaded in dependency order: storage → devtools → app -->
-    <script src="js/storage.js"></script>
+    <!-- Scripts loaded in dependency order: jszip → storage → devtools → app -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="js/storage.js?v=2"></script>
     <script src="js/devtools.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/app.js?v=2"></script>
   </body>
 </html>

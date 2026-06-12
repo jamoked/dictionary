@@ -99,6 +99,45 @@ function clearAll() {
   saveAll([]);
 }
 
+// Adds multiple new cards in a single localStorage write.
+// Each item should have { word, partOfSpeech, definition, status }.
+// Returns the number of cards added.
+function bulkAdd(newCards) {
+  if (newCards.length === 0) return 0;
+  const cards = loadAll();
+  const now = Date.now();
+  newCards.forEach(({ word, partOfSpeech, definition, status }) => {
+    cards.push({
+      id: crypto.randomUUID(),
+      word: word.trim(),
+      partOfSpeech,
+      definition: definition.trim(),
+      status: STATUSES.includes(status) ? status : "new",
+      createdAt: now,
+    });
+  });
+  saveAll(cards);
+  return newCards.length;
+}
+
+// Updates multiple existing cards by id in a single localStorage write.
+// Each item should have { id, changes } where changes is merged into the card.
+// Returns the number of cards updated.
+function bulkUpdate(updates) {
+  if (updates.length === 0) return 0;
+  const cards = loadAll();
+  let count = 0;
+  updates.forEach(({ id, changes }) => {
+    const index = cards.findIndex((c) => c.id === id);
+    if (index !== -1) {
+      cards[index] = { ...cards[index], ...changes };
+      count++;
+    }
+  });
+  saveAll(cards);
+  return count;
+}
+
 // Expose everything under a single global so other files can call storage.getCards(), etc.
 const storage = {
   getCards,
@@ -109,4 +148,6 @@ const storage = {
   deleteCard,
   setStatus,
   clearAll,
+  bulkAdd,
+  bulkUpdate,
 };
