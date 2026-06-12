@@ -5,8 +5,8 @@
 // ─── ICONS ────────────────────────────────────────────────────────────────────
 // Inline SVGs — no external library needed. Feather-style line icons.
 
-const ICON_EDIT = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`;
-const ICON_DELETE = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+const ICON_EDIT = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`;
+const ICON_DELETE = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
 const ICON_MOON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
 const ICON_SUN = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
 
@@ -259,7 +259,7 @@ function createCardEl(card) {
     "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 hover:-translate-y-px cursor-pointer transition-all";
   el.dataset.cardId = card.id;
   el.innerHTML = `
-    <div class="grid gap-x-3 gap-y-1 items-center" style="grid-template-columns: 1fr auto">
+    <div class="grid gap-x-3 gap-y-2 items-center" style="grid-template-columns: 1fr auto">
       <span class="text-lg font-semibold text-gray-900 dark:text-gray-100 leading-tight">${escapeHtml(card.word)}</span>
       <div class="flex gap-1.5 justify-end">${statusDots(card.id, card.status)}</div>
       <span class="text-xs italic text-gray-400/70 dark:text-gray-500/70">${escapeHtml(card.partOfSpeech)}</span>
@@ -675,9 +675,9 @@ function renderAll() {
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
 const STATUS_DOT_CONFIGS = {
-  new:   { active: "w-3 h-3 rounded bg-red-400 transition-colors",    inactive: "w-3 h-3 rounded border border-red-400 transition-colors" },
-  semi:  { active: "w-3 h-3 rounded bg-yellow-400 transition-colors", inactive: "w-3 h-3 rounded border border-yellow-400 transition-colors" },
-  known: { active: "w-3 h-3 rounded bg-green-400 transition-colors",  inactive: "w-3 h-3 rounded border border-green-400 transition-colors" },
+  new:   { active: "w-4 h-4 rounded bg-red-400 transition-colors",    inactive: "w-4 h-4 rounded border border-red-400 transition-colors" },
+  semi:  { active: "w-4 h-4 rounded bg-yellow-400 transition-colors", inactive: "w-4 h-4 rounded border border-yellow-400 transition-colors" },
+  known: { active: "w-4 h-4 rounded bg-green-400 transition-colors",  inactive: "w-4 h-4 rounded border border-green-400 transition-colors" },
 };
 
 function updateStatusFilterDots() {
@@ -706,7 +706,7 @@ function statusDots(cardId, currentStatus) {
       data-action="set-status"
       data-id="${cardId}"
       data-status="${d.status}"
-      class="w-3 h-3 rounded cursor-pointer transition-colors ${currentStatus === d.status ? d.active : d.inactive}"
+      class="w-3.5 h-3.5 rounded cursor-pointer transition-colors ${currentStatus === d.status ? d.active : d.inactive}"
       title="${d.label}"
       aria-label="${d.label}"
     ></button>`
@@ -724,7 +724,7 @@ function setCurrentCardStatus(status) {
 
 // Highlights the active dot in the status row — targets the inner span, not the button.
 function updateStudyStatusDots(currentStatus) {
-  const base = "w-5 h-5 rounded transition-colors";
+  const base = "w-6 h-6 rounded transition-colors";
   const configs = {
     new:   { active: `${base} bg-red-400`,    inactive: `${base} border border-red-400` },
     semi:  { active: `${base} bg-yellow-400`, inactive: `${base} border border-yellow-400` },
