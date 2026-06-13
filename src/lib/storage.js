@@ -1,5 +1,5 @@
 // storage.js — DATA LAYER
-// This is the only file that reads from or writes to localStorage.
+// This is the only file that reads from or writes to localStorage for card data.
 // All other files call these functions instead of touching localStorage directly.
 // Later, if you add a real backend, you only need to change this one file.
 
@@ -33,17 +33,17 @@ function saveAll(cards) {
 
 // --- Public API ---
 
-function getCards() {
+export function getCards() {
   return loadAll();
 }
 
-function getCard(id) {
+export function getCard(id) {
   return loadAll().find((c) => c.id === id) ?? null;
 }
 
 // Returns the existing card if word + partOfSpeech already exist (case-insensitive).
 // Used to warn the user before adding a duplicate.
-function findDuplicate(word, partOfSpeech) {
+export function findDuplicate(word, partOfSpeech) {
   const normalWord = word.trim().toLowerCase();
   const normalPos = partOfSpeech.trim().toLowerCase();
   return (
@@ -55,7 +55,7 @@ function findDuplicate(word, partOfSpeech) {
   );
 }
 
-function addCard({ word, partOfSpeech, definition }) {
+export function addCard({ word, partOfSpeech, definition }) {
   const cards = loadAll();
   const newCard = {
     id: crypto.randomUUID(),
@@ -70,7 +70,7 @@ function addCard({ word, partOfSpeech, definition }) {
   return newCard;
 }
 
-function updateCard(id, changes) {
+export function updateCard(id, changes) {
   const cards = loadAll();
   const index = cards.findIndex((c) => c.id === id);
   if (index === -1) return null;
@@ -79,13 +79,13 @@ function updateCard(id, changes) {
   return cards[index];
 }
 
-function deleteCard(id) {
+export function deleteCard(id) {
   const cards = loadAll().filter((c) => c.id !== id);
   saveAll(cards);
 }
 
 // Sets a card's review status to one of: "new", "semi", "known".
-function setStatus(id, status) {
+export function setStatus(id, status) {
   if (!STATUSES.includes(status)) return;
   const cards = loadAll();
   const card = cards.find((c) => c.id === id);
@@ -95,14 +95,14 @@ function setStatus(id, status) {
   }
 }
 
-function clearAll() {
+export function clearAll() {
   saveAll([]);
 }
 
 // Adds multiple new cards in a single localStorage write.
 // Each item should have { word, partOfSpeech, definition, status }.
 // Returns the number of cards added.
-function bulkAdd(newCards) {
+export function bulkAdd(newCards) {
   if (newCards.length === 0) return 0;
   const cards = loadAll();
   const now = Date.now();
@@ -123,7 +123,7 @@ function bulkAdd(newCards) {
 // Updates multiple existing cards by id in a single localStorage write.
 // Each item should have { id, changes } where changes is merged into the card.
 // Returns the number of cards updated.
-function bulkUpdate(updates) {
+export function bulkUpdate(updates) {
   if (updates.length === 0) return 0;
   const cards = loadAll();
   let count = 0;
@@ -137,17 +137,3 @@ function bulkUpdate(updates) {
   saveAll(cards);
   return count;
 }
-
-// Expose everything under a single global so other files can call storage.getCards(), etc.
-const storage = {
-  getCards,
-  getCard,
-  findDuplicate,
-  addCard,
-  updateCard,
-  deleteCard,
-  setStatus,
-  clearAll,
-  bulkAdd,
-  bulkUpdate,
-};

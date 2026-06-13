@@ -1,6 +1,6 @@
 # Dictionary
 
-A minimal vocabulary flashcard app for building and reviewing your personal word list. No accounts, no sync, no install — just open it in a browser.
+A minimal vocabulary flashcard app for building and reviewing your personal word list. No accounts, no sync — your data stays in your browser.
 
 ## Features
 
@@ -25,39 +25,36 @@ A minimal vocabulary flashcard app for building and reviewing your personal word
 
 ## Running it
 
-No build step required.
-
-**Option A — open directly:**
 ```
-open index.html
+npm install
+npm run dev      # dev server at http://localhost:5173
 ```
 
-**Option B — local server (recommended, avoids some browser restrictions):**
-```
-python3 -m http.server
-```
-Then visit `http://localhost:8000`.
+Other scripts: `npm run build` (production build into `dist/`) and `npm run preview` (serve that build).
 
 ## Tech stack
 
-- Vanilla JavaScript, HTML, CSS — no frameworks
-- [Tailwind CSS](https://tailwindcss.com) via Play CDN for utility styling
+- [React](https://react.dev) + [Vite](https://vite.dev) (JavaScript/JSX — no TypeScript)
+- [Tailwind CSS v4](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com) components
+- [JSZip](https://stuk.github.io/jszip/) for `.zip` export
 - `localStorage` for persistence
 - [Inter](https://fonts.google.com/specimen/Inter) via Google Fonts
 
 ## Project structure
 
 ```
-index.html        # All markup
-css/styles.css    # Flip animation, modal transitions, custom properties
-js/storage.js     # Data layer — the only file that touches localStorage
-js/app.js         # UI logic
-js/devtools.js    # Dev helpers (seed data, clear, log)
+index.html         # Vite entry — meta tags, Inter font, the pre-paint theme script
+src/App.jsx        # Owns card state + all storage mutations; wires the tabs and dialogs
+src/lib/           # storage (data layer), theme, validate, importExport, devtools
+src/components/     # Header, Learn/Review tabs, cards, dialogs, and shadcn ui/ primitives
+src/index.css      # Tailwind, theme tokens (slate/obsidian), and the few hand-written CSS rules
 ```
+
+See `CLAUDE.md` for the full architecture notes.
 
 ## Dev tools
 
-A collapsible panel at the bottom of the page (also available as `window.dev` in the browser console) lets you seed sample cards, wipe data, and inspect storage without touching the UI.
+The Settings dialog has a **Developer** section (Seed / Clear / Log). The same helpers are on `window.dev` in development:
 
 ```js
 window.dev.seed()   // add ~8 sample cards
