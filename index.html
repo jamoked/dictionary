@@ -11,6 +11,16 @@
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
+    <!-- Apply dark class before first paint so the status bar area never flashes white -->
+    <script>
+      (function () {
+        const saved = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (saved === 'dark' || (!saved && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
     <title>Dictionary</title>
 
     <!-- Google Fonts: Inter (matches Obsidian's clean, modern feel) -->
@@ -43,7 +53,7 @@
   </head>
 
   <body
-    class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans min-h-screen transition-colors duration-200"
+    class="text-gray-900 dark:text-gray-100 font-sans min-h-screen transition-colors duration-200"
   >
     <!-- ── HEADER ─────────────────────────────────────────────────────────── -->
     <header

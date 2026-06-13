@@ -196,8 +196,17 @@ html.dark[data-theme="obsidian"] #btn-shuffle              { border-color: #2d2b
 .dark #btn-status-semi:not(.status-active)  { color: rgb(253 224 71);  }
 .dark #btn-status-known:not(.status-active) { color: rgb(134 239 172); }
 
-/* ── Prevent horizontal scroll ───────────────────────────────────────────── */
-html, body { overflow-x: hidden; max-width: 100%; }
+/* ── App background variable ─────────────────────────────────────────────────
+   Single source of truth for the page background. Both <html> and <body> use
+   this variable so the iOS PWA status bar area always matches the app.
+   New themes override --app-bg on their own selector; nothing else needs to
+   change. overflow-x must stay off <html> on iOS Safari or it breaks the PWA
+   full-screen layout. */
+:root      { --app-bg: #f9fafb; } /* gray-50  — light mode */
+html.dark  { --app-bg: #030712; } /* gray-950 — dark mode  */
+
+html, body { background-color: var(--app-bg); }
+body       { overflow-x: hidden; max-width: 100%; }
 
 /* ── Mobile scaling ──────────────────────────────────────────────────────────
    Bumps the root font size so all rem-based sizing scales up ~12.5% on mobile.
