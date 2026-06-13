@@ -304,8 +304,7 @@ function getFilteredCards() {
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesPos = !filterPos || card.partOfSpeech === filterPos;
-    const matchesStatus =
-      filterStatuses.size === 0 || filterStatuses.has(card.status);
+    const matchesStatus = filterStatuses.has(card.status);
     return matchesSearch && matchesPos && matchesStatus;
   });
 }
@@ -560,6 +559,7 @@ sortGroupSelect.addEventListener('change', (e) => {
 Object.entries(filterStatusBtns).forEach(([status, btn]) => {
   btn.addEventListener('click', () => {
     if (filterStatuses.has(status)) {
+      if (filterStatuses.size === 1) return; // always keep at least one active
       filterStatuses.delete(status);
     } else {
       filterStatuses.add(status);
