@@ -132,10 +132,51 @@ Keyboard shortcuts (active when Review tab is visible and no input is focused):
 Cards use `grid gap-4 sm:grid-cols-2 lg:grid-cols-3`. Container is `max-w-5xl`.
 
 ### Theme
-Tailwind `class` dark-mode. `applyTheme(isDark)` sets `innerHTML` on the toggle button. Persisted in localStorage; defaults to `prefers-color-scheme` on first visit.
+Tailwind `class` dark-mode. `applyTheme(isDark)` toggles the `dark` class on `<html>` and sets the active state on the sun/moon pill toggle buttons (`#settings-light-btn` / `#settings-dark-btn`). Persisted in localStorage; defaults to `prefers-color-scheme` on first visit.
+
+An **inline `<script>` in `<head>`** applies the `dark` class synchronously before any render — prevents a white flash on load and ensures the iOS PWA status bar area shows the correct background immediately.
+
+The page background is controlled by a single CSS custom property `--app-bg` (defined in `styles.css`). Both `<html>` and `<body>` use it. To add a new theme with a different background, override the variable on that theme's selector — nothing else needs to change.
+
+### Settings modal
+Triggered by the gear icon in the header. Two sections:
+
+**Style section:**
+- **Display** row — sun/moon pill toggle (`#settings-light-btn` / `#settings-dark-btn`). Active button gets `.active` class styled in `styles.css` (white pill in light mode, gray-600 in dark mode).
+- **Theme** row — `<select>` for color theme (Obsidian / Slate). Controls `data-theme` attribute on `<html>` via `applyColorTheme()`.
+
+**Data section:**
+- **Import** row — triggers a hidden `<input type="file" multiple accept=".md">`. Parses each file, handles duplicates via a confirmation modal, shows an Import Summary modal.
+- **Export** row — generates a `.zip` of all cards as `.md` files. Filename: `vocab_export_YYYYMMDD.zip`.
+
+### Import / Export
+
+**Export format** — each card becomes a `.md` file named after the word (invalid filename chars replaced with `_`):
+```
+---
+part of speech: noun
+definition: the act of something
+status: new
+---
+```
+
+**Import validation** (`parseMdFile`) — strict line-by-line parsing against the template:
+1. Empty file → `"Empty file — no valid properties detected."`
+2. Missing or malformed `---` delimiters → `"Invalid format — file must match the word template."`
+3. Wrong number of lines between delimiters (must be exactly 2 or 3) → invalid format
+4. Line 1 key must be exactly `part of speech:`, line 2 must be `definition:`, optional line 3 must be `status:` — any other key → invalid format
+5. Empty values for required keys → `Missing "part of speech"` / `Missing "definition"`
+6. Invalid POS value or definition > 200 chars → specific errors
+
+Duplicates (same word + POS) trigger a confirmation modal before overwriting.
+
+**Import Summary modal** (`#import-result-modal`) — shown after every import:
+- Line 1: `N files processed`
+- Line 2: colored breakdown — `X added` (green) / `X updated` (blue) / `X failed` (red) / `X skipped` (gray) — only statuses with count > 0 appear, each on its own line
+- **Details** section — scrollable per-file list sorted alphabetically; filename on one line, status/reason on the line below
 
 ### Shared dot config
-`STATUS_DOT_CONFIGS` in app.js holds the active/inactive Tailwind class strings for all `w-3 h-3` dot buttons. Used by both `updateStatusFilterDots()` (Learn tab) and `updateReviewFilterDots()` (Review tab). Study mode status dots use a separate inline config with `w-5 h-5`.
+`STATUS_DOT_CONFIGS` in app.js holds the active/inactive Tailwind class strings for all `w-4 h-4` dot buttons. Used by both `updateStatusFilterDots()` (Learn tab) and `updateReviewFilterDots()` (Review tab). Study mode status dots use a separate inline config with `w-5 h-5`.
 
 ## Inline SVG icons (app.js)
 
